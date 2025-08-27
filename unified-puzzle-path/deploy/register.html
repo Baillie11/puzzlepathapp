@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Congratulations! - Puzzle Path</title>
+    <link rel="icon" type="image/png" href="puzzlepath-logo-web.png">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background: #f4f8fb;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 1em;
+        }
+        .celebration-banner {
+            background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+            color: white;
+            text-align: center;
+            padding: 2em;
+            border-radius: 15px;
+            margin-bottom: 2em;
+        }
+        .celebration-banner h1 {
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .celebration-banner .emoji {
+            font-size: 3em;
+            margin: 0.5em 0;
+        }
+        .completion-stats {
+            background: white;
+            padding: 2em;
+            border-radius: 15px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+            margin-bottom: 2em;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5em;
+            margin-bottom: 2em;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 1em;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fc5c7d;
+            margin-bottom: 0.25em;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .register-form {
+            background: white;
+            padding: 2em;
+            border-radius: 15px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+            margin-bottom: 2em;
+        }
+        .register-form h2 {
+            color: #333;
+            margin-top: 0;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 1.5em;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #fc5c7d;
+            box-shadow: 0 0 5px rgba(252, 92, 125, 0.3);
+        }
+        .register-button {
+            background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            font-size: 18px;
+            margin: 0 auto;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+        }
+        .register-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .register-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1.5em;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1em 0;
+            border: 1px solid #c3e6cb;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1.5em;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1em 0;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1em 0;
+            color: #666;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #fc5c7d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .dashboard-link {
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .dashboard-link:hover {
+            background: #218838;
+        }
+        .medal-preview {
+            background: linear-gradient(145deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            border-radius: 15px;
+            padding: 2em;
+            text-align: center;
+            margin: 2em 0;
+        }
+        .medal-preview .medal-icon {
+            font-size: 4em;
+            margin-bottom: 0.5em;
+        }
+        .medal-preview h3 {
+            color: #856404;
+            margin: 0.5em 0;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 0.5em;
+            }
+            .celebration-banner h1 {
+                font-size: 2em;
+            }
+            .celebration-banner .emoji {
+                font-size: 2.5em;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1em;
+            }
+            .stat-number {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="celebration-banner">
+            <div class="emoji">🎉</div>
+            <h1>Congratulations!</h1>
+            <p>You've successfully completed your <span id="questName">Puzzle Path Quest</span>!</p>
+        </div>
+        
+        <div class="completion-stats">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="completionTime">00:00:00</div>
+                    <div class="stat-label">Completion Time</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="completionDate">Today</div>
+                    <div class="stat-label">Completed On</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="medal-preview" id="medalPreview" style="display: none;">
+            <div class="medal-icon">🏅</div>
+            <h3>You've Earned a Medal!</h3>
+            <p id="medalDescription">Complete your registration to claim your achievement and see your ranking on the leaderboard.</p>
+        </div>
+        
+        <div class="register-form" id="registerForm">
+            <h2>🏆 Claim Your Achievement</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 2em;">
+                Register to save your completion time, earn medals, and compete on the leaderboard!
+            </p>
+            
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="firstName">First Name *</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="lastName">Last Name *</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Create Password *</label>
+                    <input type="password" id="password" name="password" required minlength="6">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password *</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                </div>
+                
+                <button type="submit" class="register-button" id="registerButton">
+                    🎯 Register & Claim Achievement
+                </button>
+                
+                <div class="loading" id="loading">Creating your account...</div>
+            </form>
+        </div>
+        
+        <div style="text-align: center; margin-top: 2em; display: none;" id="successContainer">
+            <p>Already have an account? <a href="login.html">Login here</a> to link this completion to your existing profile.</p>
+        </div>
+    </div>
+
+    <script>
+        // Load completion data from sessionStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const completionData = JSON.parse(sessionStorage.getItem('questCompletion') || '{}');
+            
+            if (completionData.huntName) {
+                document.getElementById('questName').textContent = completionData.huntName;
+            }
+            
+            if (completionData.formattedTime) {
+                document.getElementById('completionTime').textContent = completionData.formattedTime;
+            }
+            
+            if (completionData.completionDate) {
+                const date = new Date(completionData.completionDate);
+                document.getElementById('completionDate').textContent = date.toLocaleDateString();
+            }
+            
+            // Show medal preview
+            if (completionData.huntName) {
+                document.getElementById('medalPreview').style.display = 'block';
+                document.getElementById('medalDescription').textContent = 
+                    `Complete your registration to claim your ${completionData.huntName} medal and see your ranking!`;
+            }
+            
+            // Store completion data for registration
+            window.completionData = completionData;
+        });
+
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+            
+            // Validate password match
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const registerButton = document.getElementById('registerButton');
+            const loading = document.getElementById('loading');
+            registerButton.disabled = true;
+            loading.style.display = 'block';
+            
+            try {
+                // Prepare registration data
+                const registrationData = {
+                    firstName: formData.get('firstName'),
+                    lastName: formData.get('lastName'),
+                    email: formData.get('email'),
+                    password: password,
+                    completionData: window.completionData || {}
+                };
+                
+                const response = await fetch('register.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(registrationData)
+                });
+                
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                registerButton.disabled = false;
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    
+                    // Clear the form
+                    document.getElementById('registrationForm').reset();
+                    
+                    // Show dashboard link
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.php';
+                    }, 2000);
+                    
+                } else {
+                    showMessage(data.message, 'error');
+                }
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                registerButton.disabled = false;
+                showMessage('Network error. Please try again.', 'error');
+                console.error('Registration error:', error);
+            }
+        });
+
+        function showMessage(message, type) {
+            // Remove any existing messages
+            const existingMessage = document.querySelector('.success-message, .error-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
+            messageDiv.textContent = message;
+            
+            // Insert after the form
+            const form = document.getElementById('registerForm');
+            form.parentNode.insertBefore(messageDiv, form.nextSibling);
+            
+            // Auto-remove success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
