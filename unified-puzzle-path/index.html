@@ -173,6 +173,23 @@
             color: #333;
             font-weight: 500;
             margin: 1em 0;
+            position: relative;
+            padding-left: 60px;
+        }
+        
+        .task-label {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-25deg);
+            background: #4ca6a8;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
         .buttons {
@@ -697,7 +714,10 @@
             clueElement.innerHTML = `
                 <h3>${clue.title}</h3>
                 <p>${clue.clue.replace(/\n/g, '<br>')}</p>
-                <div class="task auto-shown"><strong>Task:</strong> ${clue.task}</div>
+                <div class="task auto-shown">
+                    <span class="task-label">Task</span>
+                    ${clue.task}
+                </div>
                 <div class="buttons">
                     <button onclick="showHint(${index})">Need a Hint?</button>
                     <div class="hint">${clue.hint}</div>
