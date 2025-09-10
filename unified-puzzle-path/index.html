@@ -166,6 +166,15 @@
             border-radius: 5px;
         }
         
+        .task.auto-shown {
+            display: block;
+            background: #e7f3ff;
+            border: 2px solid #4ca6a8;
+            color: #333;
+            font-weight: 500;
+            margin: 1em 0;
+        }
+        
         .buttons {
             margin-top: 0.5em;
         }
@@ -688,10 +697,7 @@
             clueElement.innerHTML = `
                 <h3>${clue.title}</h3>
                 <p>${clue.clue.replace(/\n/g, '<br>')}</p>
-                <div class="buttons">
-                    <button onclick="showTask(${index})">Show Task</button>
-                    <div class="task">${clue.task}</div>
-                </div>
+                <div class="task auto-shown"><strong>Task:</strong> ${clue.task}</div>
                 <div class="buttons">
                     <button onclick="showHint(${index})">Need a Hint?</button>
                     <div class="hint">${clue.hint}</div>
@@ -703,15 +709,6 @@
             clueElement.id = `clue-${index}`;
             container.appendChild(clueElement);
         });
-    }
-
-    function showTask(index) {
-        const clueElement = document.getElementById(`clue-${index}`);
-        const taskButton = clueElement.querySelector('.buttons button');
-        const taskDiv = clueElement.querySelector('.task');
-        
-        taskButton.style.display = 'none';
-        taskDiv.style.display = 'block';
     }
 
     function showHint(index) {
