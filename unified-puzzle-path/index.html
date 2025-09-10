@@ -59,6 +59,7 @@
         .hunt-info h3 {
             margin-top: 0;
             color: #4ca6a8;
+            text-align: center;
         }
 
         .hunt-stats {
@@ -324,6 +325,10 @@
             background: #5a6268;
         }
 
+        .timer-toggle-btn[style*="background: #dc3545"]:hover {
+            background: #c82333 !important;
+        }
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .container {
@@ -402,6 +407,7 @@
 <div class="container" id="timerContainer">
     <div class="timer-controls" id="timerControls" style="display: none; text-align: center; margin-bottom: 10px;">
         <button id="timerToggle" onclick="toggleTimer()" class="timer-toggle-btn">🕐 Hide Timer</button>
+        <button id="resetQuestBtn" onclick="resetQuest()" class="timer-toggle-btn" style="background: #dc3545; margin-left: 10px;">🔄 Reset Quest</button>
     </div>
     <div class="timer" id="timer">Time: 00:00:00</div>
     <div class="progress-bar" id="progressBar">
@@ -441,9 +447,121 @@
     let verifiedBookingData = null;
     let huntData = null;
     let cluesData = [];
+    let customerEmail = null; // Store customer email for future use
+
+    // Session persistence functions
+    function saveQuestState() {
+        const questState = {
+            verifiedBookingData: verifiedBookingData,
+            huntData: huntData,
+            customerEmail: customerEmail,
+            completedClues: completedClues,
+            totalClues: totalClues,
+            startTime: startTime ? startTime.getTime() : null,
+            cluesData: cluesData,
+            questStarted: startTime !== null,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('puzzlepath_quest_state', JSON.stringify(questState));
+    }
+
+    function loadQuestState() {
+        const saved = localStorage.getItem('puzzlepath_quest_state');
+        if (!saved) return null;
+        
+        try {
+            const questState = JSON.parse(saved);
+            
+            // Check if saved state is less than 24 hours old
+            const hoursSinceStart = (Date.now() - questState.timestamp) / (1000 * 60 * 60);
+            if (hoursSinceStart > 24) {
+                localStorage.removeItem('puzzlepath_quest_state');
+                return null;
+            }
+            
+            return questState;
+        } catch (e) {
+            localStorage.removeItem('puzzlepath_quest_state');
+            return null;
+        }
+    }
+
+    function clearQuestState() {
+        localStorage.removeItem('puzzlepath_quest_state');
+    }
+
+    function restoreQuestState(questState) {
+        verifiedBookingData = questState.verifiedBookingData;
+        huntData = questState.huntData;
+        customerEmail = questState.customerEmail;
+        completedClues = questState.completedClues;
+        totalClues = questState.totalClues;
+        cluesData = questState.cluesData;
+        
+        if (questState.startTime) {
+            startTime = new Date(questState.startTime);
+        }
+        
+        // Update UI
+        updateQuestInfo();
+        createClueElements();
+        
+        // Hide booking form and show hunt info
+        document.getElementById('bookingContainer').style.display = 'none';
+        document.getElementById('huntInfo').style.display = 'block';
+        
+        if (questState.questStarted) {
+            // Quest was in progress - restore timer and show progress
+            document.getElementById('timerContainer').style.display = 'block';
+            document.getElementById('timerControls').style.display = 'block';
+            document.getElementById('timer').style.display = 'block';
+            document.getElementById('progressBar').style.display = 'block';
+            
+            // Show completed clues
+            for (let i = 0; i < completedClues; i++) {
+                if (document.getElementById(`clue-${i}`)) {
+                    document.getElementById(`clue-${i}`).style.display = 'block';
+                    const checkbox = document.getElementById(`clue-${i}`).querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = true;
+                }
+            }
+            
+            // Show current clue if not all completed
+            if (completedClues < totalClues && document.getElementById(`clue-${completedClues}`)) {
+                document.getElementById(`clue-${completedClues}`).style.display = 'block';
+            }
+            
+            // Update progress and restart timer
+            updateProgress();
+            startTimer();
+            
+            // Show finish button if all clues completed
+            if (completedClues === totalClues) {
+                document.getElementById('finishContainer').style.display = 'block';
+                document.getElementById('finishButton').disabled = false;
+                
+                // Hide reset button since quest is completed
+                const resetBtn = document.getElementById('resetQuestBtn');
+                if (resetBtn) resetBtn.style.display = 'none';
+            }
+            
+            showMessage('Quest progress restored! You can continue where you left off.', 'success');
+        } else {
+            // Quest was verified but not started - show start button
+            showStartButton();
+            showMessage('Booking restored! Click "Start Your Quest" to begin.', 'success');
+        }
+    }
 
     // Add event listener for Enter key on booking number input
     document.addEventListener('DOMContentLoaded', function() {
+        // Try to restore quest state on page load
+        const savedState = loadQuestState();
+        if (savedState) {
+            restoreQuestState(savedState);
+            return; // Skip normal initialization
+        }
+        
         const bookingInput = document.getElementById('bookingNumber');
         if (bookingInput) {
             bookingInput.addEventListener('keypress', function(e) {
@@ -484,7 +602,7 @@
         loading.style.display = 'block';
         
         try {
-            const response = await fetch('test_json.php', {
+            const response = await fetch('verify_booking.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -501,6 +619,7 @@
             if (data.success) {
                 verifiedBookingData = data.booking_data;
                 huntData = data.hunt_data;
+                customerEmail = data.booking_data.customer_email; // Store email for future use
                 
                 showMessage(data.message, 'success');
                 
@@ -509,6 +628,9 @@
                 
                 // Load clues for this hunt
                 await loadClues(huntData.hunt_id);
+                
+                // Save quest state after successful booking verification
+                saveQuestState();
                 
                 // Hide booking form and show hunt info
                 document.getElementById('bookingContainer').style.display = 'none';
@@ -531,8 +653,8 @@
         
         document.getElementById('questTitle').textContent = huntData.hunt_name;
         document.getElementById('questInstructions').textContent = `${greeting} ${huntData.instructions}`;
-        document.getElementById('huntName').textContent = huntData.hunt_name;
-        document.getElementById('huntDescription').textContent = huntData.description;
+        document.getElementById('huntName').textContent = 'Quest Details'; // Keep generic header
+        document.getElementById('huntDescription').textContent = huntData.description; // Now shows custom description
         document.getElementById('totalClues').textContent = huntData.total_clues;
         document.getElementById('estimatedTime').textContent = huntData.estimated_duration;
         totalClues = huntData.total_clues;
@@ -676,6 +798,9 @@
         // Update progress
         updateProgress();
         
+        // Save quest state after starting
+        saveQuestState();
+        
         // Send start event to server
         sendQuestEvent('start', {
             startTime: startTime.toISOString(),
@@ -708,6 +833,9 @@
         // Update progress
         updateProgress();
         
+        // Save quest state after clue completion
+        saveQuestState();
+        
         // Send clue completion event
         sendQuestEvent('clue_completed', {
             clueIndex: index,
@@ -715,10 +843,14 @@
             completedAt: new Date().toISOString()
         });
         
-        // If all clues are completed, show finish button
+        // If all clues are completed, show finish button and hide reset
         if (completedClues === totalClues) {
             document.getElementById('finishContainer').style.display = 'block';
             document.getElementById('finishButton').disabled = false;
+            
+            // Hide reset button since quest is about to be completed
+            const resetBtn = document.getElementById('resetQuestBtn');
+            if (resetBtn) resetBtn.style.display = 'none';
         }
     }
 
@@ -758,6 +890,20 @@
         // Store completion data in sessionStorage for the registration page
         sessionStorage.setItem('questCompletion', JSON.stringify(completionData));
         
+        // Mark booking as used so it cannot be reused
+        try {
+            fetch('mark_booking_used.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ booking_code: verifiedBookingData.booking_code })
+            }).catch(e => console.warn('Failed to mark booking as used:', e));
+        } catch (e) {
+            console.warn('Failed to mark booking as used:', e);
+        }
+        
+        // Clear quest state since quest is completed
+        clearQuestState();
+        
         // Redirect to registration page
         window.location.href = 'register.html';
     }
@@ -784,6 +930,14 @@
             timer.style.display = 'none';
             progressBar.style.display = 'none';
             toggleButton.textContent = '🕐 Show Timer';
+        }
+    }
+
+    // Function to reset quest and start over
+    function resetQuest() {
+        if (confirm('Are you sure you want to reset your quest? All progress will be lost and you will need to enter your booking number again.')) {
+            clearQuestState();
+            location.reload();
         }
     }
 

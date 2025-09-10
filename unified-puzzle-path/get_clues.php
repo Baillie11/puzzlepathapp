@@ -1,67 +1,117 @@
 <?php
-// Simple test clues endpoint
+// Clues endpoint - loads clues from database based on hunt_id
+define('PUZZLE_PATH_ACCESS', true);
+require_once 'config-secure.php';
+
+// Security headers
 header('Content-Type: application/json');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// Turn off error reporting
-error_reporting(0);
+// Security: Disable error display, enable logging
+error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
-// Get hunt_id from query parameter
-$hunt_id = $_GET['hunt_id'] ?? 1;
-
-// Simple test clues data
-$test_clues = [
-    [
-        'id' => 1,
-        'title' => 'Welcome to Your Adventure!',
-        'clue' => 'This is your first clue. Look around and find the starting point of your quest.',
-        'task' => 'Take a photo of yourself at the starting location.',
-        'hint' => 'The starting point is usually marked with a sign or landmark.'
-    ],
-    [
-        'id' => 2,
-        'title' => 'The Journey Continues',
-        'clue' => 'Now that you\'ve started, follow the path to discover the next location.',
-        'task' => 'Find the hidden object at the next waypoint.',
-        'hint' => 'Look for something that doesn\'t belong in the natural environment.'
-    ],
-    [
-        'id' => 3,
-        'title' => 'Getting Warmer',
-        'clue' => 'You\'re making great progress! The next clue will test your observation skills.',
-        'task' => 'Count how many red objects you can see from this vantage point.',
-        'hint' => 'Red objects might include signs, flowers, or painted items.'
-    ],
-    [
-        'id' => 4,
-        'title' => 'Halfway There!',
-        'clue' => 'You\'ve reached the halfway point. Time for a more challenging puzzle.',
-        'task' => 'Solve this riddle: I have keys but no locks. I have space but no room. What am I?',
-        'hint' => 'Think about things you use every day for communication.'
-    ],
-    [
-        'id' => 5,
-        'title' => 'Almost Done',
-        'clue' => 'The end is near! This clue will lead you to the final destination.',
-        'task' => 'Find the landmark that has been here the longest.',
-        'hint' => 'Look for something historical or with a date marking its age.'
-    ],
-    [
-        'id' => 6,
-        'title' => 'The Final Challenge',
-        'clue' => 'Congratulations on making it this far! Complete this final task to finish your quest.',
-        'task' => 'Take a group photo at the finish line and celebrate your achievement!',
-        'hint' => 'The finish line is where you started - but look for the completion marker.'
-    ]
-];
-
-echo json_encode([
-    'success' => true,
-    'message' => 'Test clues loaded successfully!',
-    'hunt_name' => 'Test Hunt Adventure',
-    'total_clues' => count($test_clues),
-    'clues' => $test_clues
-]);
+try {
+    // Validate request method
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        http_response_code(405);
+        throw new Exception('Method not allowed');
+    }
+    
+    // Get and validate hunt_id parameter
+    $hunt_id = $_GET['hunt_id'] ?? null;
+    
+    if (!$hunt_id || !is_numeric($hunt_id)) {
+        throw new Exception('Valid hunt_id parameter is required');
+    }
+    
+    $hunt_id = (int)$hunt_id;
+    
+    // Database connection
+    $db = getMainDb();
+    
+    // Get hunt information
+    $huntStmt = $db->prepare("SELECT id, title, hunt_name FROM wp2s_pp_events WHERE id = ? LIMIT 1");
+    $huntStmt->bind_param("i", $hunt_id);
+    $huntStmt->execute();
+    $huntResult = $huntStmt->get_result();
+    
+    if ($huntResult->num_rows === 0) {
+        throw new Exception('Hunt not found');
+    }
+    
+    $hunt = $huntResult->fetch_assoc();
+    $huntStmt->close();
+    
+    // Get clues for this hunt
+    $clueStmt = $db->prepare("
+        SELECT 
+            id,
+            clue_order,
+            title,
+            clue_text as clue,
+            task_description as task,
+            hint_text as hint,
+            answer,
+            latitude,
+            longitude,
+            geofence_radius
+        FROM wp2s_pp_clues 
+        WHERE hunt_id = ? AND is_active = 1 
+        ORDER BY clue_order ASC
+    ");
+    
+    $clueStmt->bind_param("i", $hunt_id);
+    $clueStmt->execute();
+    $clueResult = $clueStmt->get_result();
+    
+    $clues = [];
+    while ($row = $clueResult->fetch_assoc()) {
+        $clues[] = [
+            'id' => (int)$row['id'],
+            'order' => (int)$row['clue_order'],
+            'title' => $row['title'],
+            'clue' => $row['clue'],
+            'task' => $row['task'],
+            'hint' => $row['hint'],
+            'answer' => $row['answer'],
+            'latitude' => $row['latitude'] ? (float)$row['latitude'] : null,
+            'longitude' => $row['longitude'] ? (float)$row['longitude'] : null,
+            'geofence_radius' => $row['geofence_radius'] ? (int)$row['geofence_radius'] : null
+        ];
+    }
+    
+    $clueStmt->close();
+    $db->close();
+    
+    // Return clues
+    echo json_encode([
+        'success' => true,
+        'message' => 'Clues loaded successfully',
+        'hunt_id' => $hunt_id,
+        'hunt_name' => $hunt['title'],
+        'total_clues' => count($clues),
+        'clues' => $clues
+    ]);
+    
+} catch (Exception $e) {
+    // Log error securely
+    logError("Clue loading error", [
+        'error' => $e->getMessage(),
+        'hunt_id' => isset($hunt_id) ? $hunt_id : 'N/A',
+        'file' => basename(__FILE__)
+    ]);
+    
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage(),
+        'clues' => []
+    ]);
+}
 ?>

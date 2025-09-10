@@ -1,0 +1,29 @@
+ESSENTIAL FILES TO UPLOAD TO LIVE SITE:
+========================================
+
+CORE FILES (MUST UPLOAD):
+- config-secure.php               (Updated with dynamic hunt system)
+- index.html                      (Updated quest interface)
+- verify_booking.php              (Updated booking verification)
+- get_clues.php                   (Clue loading system)
+- mark_booking_used.php           (Booking redemption)
+- track_quest.php                 (Quest progress tracking)
+
+DIRECTORIES TO CREATE:
+- uploads/                        (Empty folder for photo uploads)
+- medals/                         (Optional: for medal images)
+
+OPTIONAL FILES:
+- puzzlepath-logo-web.png         (App logo)
+- Broadbeach Medal.png            (Medal image)
+
+CRITICAL: Before uploading config-secure.php, update the database credentials for your live site!
+
+Then run the SQL updates from update_hunt_codes.sql on your live database.
+
+DO NOT UPLOAD:
+- test_*.php files
+- debug_*.php files  
+- check_*.php files
+- config.php (old version)
+- Any files with -UPDATED, -FINAL, -TEST suffixes

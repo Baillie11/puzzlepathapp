@@ -14,11 +14,11 @@ define('PUZZLE_PATH_ACCESS', true);
 // Database Configuration - Use environment variables with secure fallbacks
 // Priority: Environment Variables > wp-config.php constants > secure defaults
 
-// WordPress Database Configuration - Local Development
-define('DB_HOST', getenv('PP_DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('PP_DB_NAME') ?: 'puzzlepath_wp');
-define('DB_USER', getenv('PP_DB_USER') ?: 'wpuser');
-define('DB_PASS', getenv('PP_DB_PASS') ?: 'wp123456');
+// LIVE SITE DATABASE CONFIGURATION - Based on your deploy settings
+define('DB_HOST', getenv('PP_DB_HOST') ?: 'localhost'); // Your live database host
+define('DB_NAME', getenv('PP_DB_NAME') ?: 'ozbizfin_wp793'); // Your live WordPress database name
+define('DB_USER', getenv('PP_DB_USER') ?: 'ozbizfin_wp793'); // Your live database username
+define('DB_PASS', getenv('PP_DB_PASS') ?: 'bS[O61@p7l'); // Your live database password
 
 // Validate required database credentials
 if (empty(DB_NAME) || empty(DB_USER) || empty(DB_PASS)) {
@@ -30,7 +30,7 @@ if (empty(DB_NAME) || empty(DB_USER) || empty(DB_PASS)) {
 
 // Application Settings
 define('APP_NAME', 'Puzzle Path');
-define('APP_VERSION', '2.1.0');
+define('APP_VERSION', '3.0.0');
 define('DEFAULT_TIMEZONE', 'Australia/Brisbane');
 
 // Security Settings
@@ -104,53 +104,72 @@ function getMainDb() {
 
 // Secure helper function to extract hunt code from booking number
 function extractHuntCodeFromBooking($booking_number) {
+    // Generic approach: take the prefix before the first '-' as the booking code
+    // This lets you add new hunts without changing code
+    if (!is_string($booking_number) || $booking_number === '') return null;
+    $booking_number = strtoupper(trim($booking_number));
     // Sanitize input
-    $booking_number = preg_replace('/[^A-Za-z0-9\-_]/', '', $booking_number);
-    
-    if (empty($booking_number)) {
-        return null;
-    }
-    
-    // Expected format: BB-YYYYMMDD-XXXX or EP-YYYYMMDD-XXXX
+    $booking_number = preg_replace('/[^A-Z0-9\-]/', '', $booking_number);
     $parts = explode('-', $booking_number);
-    if (count($parts) >= 1) {
-        $code = strtoupper($parts[0]);
-        // Validate code format
-        if (preg_match('/^[A-Z]{1,4}$/', $code)) {
-            return $code;
-        }
+    if (!empty($parts[0])) {
+        return $parts[0];
     }
-    
-    // Fallback: check if booking number contains known hunt codes
-    $booking_upper = strtoupper($booking_number);
-    $valid_codes = ['BB', 'EP', 'BBR1']; // Define valid codes
-    
-    foreach ($valid_codes as $code) {
-        if (strpos($booking_upper, $code) !== false) {
-            return $code;
-        }
-    }
-    
     return null;
 }
 
 // Secure mapping function with validation
+// NEW: Database-driven mapping so newly added hunts are recognized automatically
 function mapBookingCodeToHuntCode($booking_code) {
-    // Validate input
-    if (!is_string($booking_code) || empty($booking_code)) {
-        return null;
-    }
-    
+    if (!is_string($booking_code) || $booking_code === '') return null;
     $booking_code = strtoupper(trim($booking_code));
-    
-    // Whitelist of valid mappings
-    $mapping = [
-        'BB' => 'BBR1',  // Broadbeach booking code maps to BBR1 in database
-        'EP' => 'EP',    // Emerald Park
-        'BBR1' => 'BBR1', // Direct mapping
-    ];
-    
-    return isset($mapping[$booking_code]) ? $mapping[$booking_code] : null;
+
+    $db = getMainDb();
+
+    // 1) Try exact match against hunt_code in events
+    $stmt = $db->prepare("SELECT hunt_code FROM wp2s_pp_events WHERE hunt_code = ? LIMIT 1");
+    $stmt->bind_param('s', $booking_code);
+    if ($stmt->execute()) {
+        $res = $stmt->get_result();
+        if ($res && $res->num_rows > 0) {
+            $row = $res->fetch_assoc();
+            $stmt->close();
+            return $row['hunt_code'];
+        }
+    }
+    $stmt->close();
+
+    // 2) If code contains digits (e.g., CLG562), strip trailing digits and try prefix match
+    $alpha_prefix = preg_replace('/[^A-Z]/', '', $booking_code);
+    if (!empty($alpha_prefix)) {
+        $like = $alpha_prefix . '%';
+        $stmt2 = $db->prepare("SELECT hunt_code FROM wp2s_pp_events WHERE hunt_code LIKE ? OR UPPER(hunt_name) LIKE ? OR UPPER(title) LIKE ? LIMIT 1");
+        $upperLike = $like; // for title/hunt_name comparisons
+        $stmt2->bind_param('sss', $like, $upperLike, $upperLike);
+        if ($stmt2->execute()) {
+            $res2 = $stmt2->get_result();
+            if ($res2 && $res2->num_rows > 0) {
+                $row = $res2->fetch_assoc();
+                $stmt2->close();
+                return $row['hunt_code'];
+            }
+        }
+        $stmt2->close();
+    }
+
+    // 3) As a final heuristic, fetch all hunt codes and check if booking code starts with any
+    $codes = $db->query("SELECT hunt_code FROM wp2s_pp_events");
+    if ($codes) {
+        $booking_upper = $booking_code;
+        while ($row = $codes->fetch_assoc()) {
+            $hc = strtoupper($row['hunt_code'] ?? '');
+            if ($hc !== '' && strpos($booking_upper, $hc) === 0) {
+                return $row['hunt_code'];
+            }
+        }
+    }
+
+    // 4) No match found
+    return null;
 }
 
 // Enhanced error logging with security considerations
@@ -381,8 +400,8 @@ function makeApiRequest($url, $method = 'GET', $data = null, $timeout = 30) {
 function validateInput($input, $type = 'string', $options = []) {
     switch ($type) {
         case 'booking_number':
-            // Format: XX-YYYYMMDD-XXXX or similar
-            if (!preg_match('/^[A-Z]{1,4}-\d{8}-\d{1,6}$/i', $input)) {
+            // Format: HUNTCODE-YYYYMMDD-XXXX (flexible hunt code length)
+            if (!preg_match('/^[A-Z0-9]{1,12}-\d{8}-\d{1,6}$/i', $input)) {
                 return false;
             }
             return strtoupper($input);

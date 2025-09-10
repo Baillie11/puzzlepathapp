@@ -1,15 +1,25 @@
-# Unified Puzzle Path Quest System
+# 🧩 Puzzle Path App - Dynamic Hunt System
 
-A comprehensive, scalable scavenger hunt application that supports multiple quests with dynamic content management and user tracking.
+**Version 3.0.0** - A scalable, database-driven scavenger hunt application for the Gold Coast, Australia. Now featuring automatic hunt detection and seamless scalability.
 
-## 🎯 Features
+## 🚀 Version 3.0.0 - What's New
 
-### Core Functionality
-- **Multi-Quest Support**: Single app supports unlimited scavenger hunts
-- **Dynamic Quest Loading**: Hunts and clues loaded from database based on booking number
-- **Booking Verification**: Secure payment verification before quest access
-- **Real-time Progress Tracking**: Visual progress bar and timer
-- **Mobile-First Design**: Fully responsive with excellent mobile experience
+### 🔄 Dynamic Hunt Recognition
+- **Zero Code Changes**: Add new hunts by updating database only
+- **Intelligent Mapping**: Booking codes automatically map to correct quests
+- **Scalable Architecture**: Support unlimited hunt types and locations
+
+### ✅ Major Fixes
+- **Fixed Quest Names**: Shows correct hunt titles (no more "Broadbeach Adventurer" for everything)
+- **Real Clue Loading**: Database clues instead of test data
+- **Enhanced Validation**: Supports long hunt codes (CLG562, SPRINGBROOK, etc.)
+- **Session Persistence**: Progress saved on page refresh
+
+### 🎯 Core Features
+- **11+ Quest Types**: Broadbeach, Coolangatta, Emerald Lakes, Surfers Paradise, and more
+- **Mobile-Optimized**: Touch-friendly interface with GPS integration
+- **Secure Booking**: Payment verification with anti-fraud protection
+- **Progress Tracking**: Visual progress bar with completion statistics
 
 ### Enhanced Features
 - **User Registration & Login**: Account system with completion tracking

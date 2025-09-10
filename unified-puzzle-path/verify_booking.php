@@ -48,7 +48,7 @@ try {
     // Validate and sanitize booking number
     $booking_number = validateInput($input['booking_number'], 'booking_number');
     if (!$booking_number) {
-        throw new Exception('Invalid booking number format. Expected format: XX-YYYYMMDD-XXXX');
+        throw new Exception('Invalid booking number format. Expected format: HUNTCODE-YYYYMMDD-XXXX');
     }
     
     // Extract hunt code from booking number
@@ -61,7 +61,7 @@ try {
     // Database query with enhanced error handling
     $mainDb = getMainDb();
     
-    // Prepare statement with additional booking details
+    // Prepare statement with additional booking details including customer email
     $stmt = $mainDb->prepare("
         SELECT 
             booking_code, 
@@ -69,8 +69,9 @@ try {
             participant_names, 
             tickets as participant_count,
             customer_name,
+            customer_email,
             created_at
-        FROM wp_pp_bookings
+        FROM wp2s_pp_bookings
         WHERE booking_code = ? AND payment_status IN ('paid', 'succeeded', 'confirmed', 'complete', 'completed')
         LIMIT 1
     ");
@@ -107,6 +108,28 @@ try {
     $booking_db = $result->fetch_assoc();
     $stmt->close();
     
+    // Check if booking was already used (redeemed)
+    $mainDb->query("CREATE TABLE IF NOT EXISTS wp2s_pp_redemptions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        booking_code VARCHAR(50) UNIQUE NOT NULL,
+        redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    
+    $redeemCheck = $mainDb->prepare("SELECT booking_code FROM wp2s_pp_redemptions WHERE booking_code = ? LIMIT 1");
+    $redeemCheck->bind_param("s", $booking_number);
+    $redeemCheck->execute();
+    $redeemResult = $redeemCheck->get_result();
+    $redeemCheck->close();
+    
+    if ($redeemResult && $redeemResult->num_rows > 0) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'This booking has already been used. If you believe this is an error, please contact support.'
+        ]);
+        $mainDb->close();
+        exit;
+    }
+    
     // Since we already filtered by payment status in the query, 
     // this booking is valid
     
@@ -116,7 +139,8 @@ try {
         'payment_status' => h($booking_db['payment_status']),
         'participant_names' => h($booking_db['participant_names'] ?? ''),
         'participant_count' => (int)($booking_db['participant_count'] ?? 1),
-        'customer_name' => h($booking_db['customer_name'] ?? '')
+        'customer_name' => h($booking_db['customer_name'] ?? ''),
+        'customer_email' => h($booking_db['customer_email'] ?? '')
     ];
     
     // Get hunt information with enhanced security
@@ -127,8 +151,8 @@ try {
     }
     
     $huntStmt = $mainDb->prepare("
-        SELECT id, title, location, hunt_code, hunt_name 
-        FROM wp_pp_events
+        SELECT id, title, location, hunt_code, hunt_name, description 
+        FROM wp2s_pp_events
         WHERE hunt_code = ? AND (created_at IS NULL OR created_at <= NOW())
         LIMIT 1
     ");
@@ -161,22 +185,23 @@ try {
     // Success - booking is valid and paid
     $response = [
         'success' => true,
-        'message' => 'Booking verified successfully! Get ready for your ' . h($hunt['hunt_name']) . ' adventure!',
+        'message' => 'Booking verified successfully! Get ready for your ' . h($hunt['title']) . ' adventure!',
         'booking_data' => [
             'booking_code' => $booking['booking_code'],
             'participant_names' => $booking['participant_names'],
             'participant_count' => $booking['participant_count'],
-            'customer_name' => $booking['customer_name']
+            'customer_name' => $booking['customer_name'],
+            'customer_email' => $booking['customer_email']
         ],
         'hunt_data' => [
             'hunt_id' => (int)$hunt_id,
             'hunt_code' => h($hunt_code),
-            'hunt_name' => h($hunt['hunt_name']),
+            'hunt_name' => h($hunt['title']), // Main title (under logo)
             'location' => h($hunt['location']),
-            'description' => h($hunt['title']),
+            'description' => h(!empty($hunt['description']) ? $hunt['description'] : generateHuntDescription($hunt)),
             'instructions' => 'Start your quest adventure!',
             'total_clues' => 6, // TODO: Store in database
-            'estimated_duration' => 90 // TODO: Store in database
+            'estimated_duration' => (int)($hunt['duration_minutes'] ?? 90) // Use actual duration from database
         ]
     ];
     
@@ -215,4 +240,38 @@ try {
         'message' => $message
     ]);
 }
+// Helper to generate a nicer description from hunt row
+function generateHuntDescription($hunt) {
+    $title = isset($hunt['title']) ? $hunt['title'] : '';
+    $location = isset($hunt['location']) ? $hunt['location'] : '';
+
+    // Keywords to tailor description
+    $map = [
+        'Broadbeach' => 'Discover hidden gems and playful challenges around Broadbeach.',
+        'Emerald' => 'Wander scenic lakeside paths and uncover nature-themed puzzles.',
+        'Coolangatta' => 'Stroll the coastline and solve clues with ocean views.',
+        'Surfers Paradise' => 'Explore iconic laneways and landmarks in the heart of Surfers.',
+        'Koala Trail' => 'Cruise the hinterland and track down clues on a relaxed driving route.',
+        'Springbrook' => 'Head into the hinterland for crisp air, winding roads and alpaca fun.',
+        'Rockpools' => 'Follow tranquil paths beside crystal-clear rockpools and leafy trails.',
+        'Hinterland' => 'A blend of waterfalls, lookouts and winding tracks—perfect for explorers.',
+        'Risque' => 'An adults-only adventure with cheeky twists and clever riddles.',
+        'Test' => 'A short route for testing the end-to-end quest flow.'
+    ];
+
+    $blurb = '';
+    foreach ($map as $keyword => $text) {
+        if (stripos($title . ' ' . $location, $keyword) !== false) {
+            $blurb = $text;
+            break;
+        }
+    }
+
+    if ($blurb === '') {
+        $blurb = 'Explore the area and uncover clues in this fun, self-paced adventure!';
+    }
+
+    return h($blurb);
+}
+
 ?>
