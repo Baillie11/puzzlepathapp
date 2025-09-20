@@ -4,45 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Puzzle Path Quest</title>
-    <link rel="icon" type="image/png" href="puzzlepath-logo-web.png">
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
             margin: 0;
-            background: #f4f8fb;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 1em;
+            padding: 0;
+            min-height: 100vh;
         }
 
-        .intro-banner {
-            background: #fdeaa8;
-            color: #333;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
             text-align: center;
-            padding: 1.5em;
-            border-radius: 10px;
+            margin-bottom: 2em;
+        }
+
+        .logo {
+            max-width: 300px;
+            height: auto;
             margin-bottom: 1em;
         }
-        
-        .intro-banner img {
-            display: block;
-            margin: auto;
-            max-width: 120px;
-            margin-bottom: 0.5em;
-        }
-        
-        .intro-banner h1 {
-            font-size: 1.8em;
-            margin: 0.5em 0;
+
+        h1 {
             color: #333;
+            font-size: 2.5em;
+            margin: 0;
         }
-        
-        .intro-banner p {
-            font-size: 1em;
+
+        .subtitle {
+            color: #f0f0f0;
+            font-size: 1.2em;
             margin: 0;
             color: #333;
         }
@@ -157,8 +153,7 @@
             display: none;
         }
         
-        .task, .hint {
-            display: none;
+        .task {
             margin-top: 0.5em;
             padding: 0.5em;
             background: #fff3cd;
@@ -169,12 +164,12 @@
         .task.auto-shown {
             display: block;
             background: #e7f3ff;
+            border: 2px solid #4ca6a8;
             color: #333;
             font-weight: 500;
             margin: 1em 0;
             position: relative;
             padding-left: 60px;
-            border-radius: 8px;
         }
         
         .task-label {
@@ -182,16 +177,23 @@
             left: 8px;
             top: 50%;
             transform: translateY(-50%) rotate(-25deg);
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            background: #4ca6a8;
             color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.9em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
             font-weight: bold;
             text-transform: uppercase;
-            box-shadow: 0 3px 8px rgba(255, 107, 107, 0.4);
-            border: 2px solid #fff;
-            letter-spacing: 1px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .hint {
+            display: none;
+            margin-top: 0.5em;
+            padding: 0.5em;
+            background: #fff3cd;
+            text-align: center;
+            border-radius: 5px;
         }
         
         .buttons {
@@ -333,15 +335,6 @@
             border: 1px solid #f5c6cb;
         }
         
-        .clue.completed {
-            opacity: 0.7;
-            background: #f8f9fa;
-        }
-        
-        .clue.completed .answer-section {
-            display: none;
-        }
-        
         button {
             background: #4ca6a8;
             border: none;
@@ -356,10 +349,6 @@
         
         button:hover {
             background: #3a8a8c;
-        }
-        
-        .hidden {
-            display: none;
         }
 
         .success-message {
@@ -434,181 +423,118 @@
         .verify-button:hover {
             background: #3a8a8c;
         }
-        
+
         .verify-button:disabled {
             background: #cccccc;
             cursor: not-allowed;
         }
-        
+
         .loading {
             display: none;
+            text-align: center;
             margin: 1em 0;
-        }
-        
-        .loading::after {
-            content: '';
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4ca6a8;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            color: #666;
         }
 
         .progress-bar {
-            background: #e9ecef;
+            background: white;
             border-radius: 10px;
-            padding: 3px;
+            padding: 1em;
             margin: 1em 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: none;
         }
 
         .progress-fill {
-            background: linear-gradient(90deg, #4ca6a8, #6cc3d0);
-            height: 20px;
-            border-radius: 7px;
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            height: 30px;
+            border-radius: 15px;
+            text-align: center;
+            line-height: 30px;
             color: white;
             font-weight: bold;
-            font-size: 0.8em;
+            transition: width 0.3s ease;
+            width: 0%;
         }
 
-        .timer-toggle-btn {
-            background: #6c757d;
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+        .timer-controls {
+            background: white;
+            padding: 1em;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1em 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
         }
 
-        .timer-toggle-btn:hover {
-            background: #5a6268;
-        }
-
-        .timer-toggle-btn[style*="background: #dc3545"]:hover {
-            background: #c82333 !important;
-        }
-
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .container {
-                padding: 0.5em;
-                max-width: 100%;
-            }
-            
-            .intro-banner h1 {
-                font-size: 1.5em;
-            }
-            
-            .intro-banner img {
-                max-width: 100px;
-            }
-            
-            .clue {
-                margin: 0.5em 0;
-                padding: 0.8em;
-            }
-            
-            button {
-                display: block;
-                width: 100%;
-                margin: 0.3em 0;
-                padding: 0.6em;
-                font-size: 1em;
-            }
-            
-            .buttons {
-                margin-top: 0.8em;
-            }
-
-            .hunt-stats {
-                grid-template-columns: 1fr;
-                gap: 0.5em;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .intro-banner h1 {
-                font-size: 1.3em;
-            }
-            
-            .intro-banner p {
-                font-size: 0.9em;
-            }
-            
-            .clue {
-                padding: 0.6em;
-            }
+        .finish-container {
+            background: white;
+            padding: 2em;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1em 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <img src="puzzlepath-logo-web.png" alt="Puzzle Path Logo" class="logo">
+            <h1 id="questTitle">Puzzle Path Quest</h1>
+        </div>
 
-<div class="container">
-    <div class="intro-banner">
-        <a href="https://www.puzzlepath.com.au" target="_blank" rel="noopener">
-            <img alt="Puzzle Path Logo" src="puzzlepath-logo-web.png"/>
-        </a>
-        <h1 id="questTitle">Puzzle Path Quest</h1>
-        <p id="questInstructions">Enter your booking number to begin your adventure!</p>
-    </div>
-</div>
-
-<div class="container" id="bookingContainer">
-    <div class="booking-form">
-        <h2>🔐 Enter Your Booking Number</h2>
-        <p>Please enter the booking number you received when you made your reservation.</p>
-        <input type="text" id="bookingNumber" placeholder="Enter booking number" maxlength="50">
-        <button class="verify-button" id="verifyButton" onclick="verifyBooking()">Verify Booking</button>
-        <div class="loading" id="loading">Verifying...</div>
-    </div>
-</div>
-
-<div class="container" id="timerContainer">
-    <div class="timer-controls" id="timerControls" style="display: none; text-align: center; margin-bottom: 10px;">
-        <button id="timerToggle" onclick="toggleTimer()" class="timer-toggle-btn">🕐 Hide Timer</button>
-        <button id="resetQuestBtn" onclick="resetQuest()" class="timer-toggle-btn" style="background: #dc3545; margin-left: 10px;">🔄 Reset Quest</button>
-    </div>
-    <div class="timer" id="timer">Time: 00:00:00</div>
-    <div class="progress-bar" id="progressBar">
-        <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
-    </div>
-</div>
-
-<div class="container" id="huntInfoContainer">
-    <div class="hunt-info" id="huntInfo">
-        <h3 id="huntName">Quest Details</h3>
-        <p id="huntDescription">...</p>
-        <div class="hunt-stats">
-            <div class="stat-item">
-                <div class="stat-number" id="totalClues">0</div>
-                <div>Total Clues</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" id="estimatedTime">0</div>
-                <div>Est. Minutes</div>
+        <div id="bookingContainer">
+            <div class="booking-form">
+                <h2>Enter Your Booking Number</h2>
+                <p>Please enter the booking number from your confirmation email:</p>
+                <input type="text" id="bookingNumber" placeholder="HUNT-YYYYMMDD-XXXX" maxlength="50">
+                <br>
+                <button class="verify-button" id="verifyButton" onclick="verifyBooking()">Verify Booking</button>
+                <div class="loading" id="loading">
+                    <p>🔄 Verifying your booking...</p>
+                </div>
             </div>
         </div>
+
+        <div id="huntInfo" class="hunt-info">
+            <div id="huntInfoContainer">
+                <h3 id="huntName">Quest Details</h3>
+                <p id="questInstructions">Loading quest details...</p>
+                <p id="huntDescription">Discover amazing locations and solve puzzles in this interactive adventure!</p>
+                
+                <div class="hunt-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalClues">-</div>
+                        <div>Total Clues</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="estimatedTime">-</div>
+                        <div>Est. Minutes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="timerContainer" class="timer-controls">
+            <div id="timer" class="timer">Time: 00:00:00</div>
+        </div>
+
+        <div id="progressBar" class="progress-bar">
+            <div id="progressFill" class="progress-fill">0%</div>
+        </div>
+
+        <div id="clueContainer">
+            <!-- Clues will be dynamically generated here -->
+        </div>
+
+        <div id="finishContainer" class="finish-container">
+            <h2>🎉 Quest Complete!</h2>
+            <p>Congratulations! You've successfully completed your quest!</p>
+            <button class="finish-button" id="finishButton" onclick="finishQuest()">🏆 Finish Quest</button>
+        </div>
     </div>
-</div>
-
-<div class="container" id="clueContainer"></div>
-
-<div class="container" id="finishContainer" style="display: none; text-align: center;">
-    <button class="finish-button" id="finishButton" onclick="finishQuest()" disabled>🏁 Complete Quest!</button>
-</div>
 
 <script>
     // Global variables
@@ -619,115 +545,15 @@
     let verifiedBookingData = null;
     let huntData = null;
     let cluesData = [];
-    let customerEmail = null; // Store customer email for future use
+    let customerEmail = null;
 
-    // Session persistence functions
-    function saveQuestState() {
-        const questState = {
-            verifiedBookingData: verifiedBookingData,
-            huntData: huntData,
-            customerEmail: customerEmail,
-            completedClues: completedClues,
-            totalClues: totalClues,
-            startTime: startTime ? startTime.getTime() : null,
-            cluesData: cluesData,
-            questStarted: startTime !== null,
-            timestamp: Date.now()
-        };
-        localStorage.setItem('puzzlepath_quest_state', JSON.stringify(questState));
-    }
-
-    function loadQuestState() {
-        const saved = localStorage.getItem('puzzlepath_quest_state');
-        if (!saved) return null;
-        
-        try {
-            const questState = JSON.parse(saved);
-            
-            // Check if saved state is less than 24 hours old
-            const hoursSinceStart = (Date.now() - questState.timestamp) / (1000 * 60 * 60);
-            if (hoursSinceStart > 24) {
-                localStorage.removeItem('puzzlepath_quest_state');
-                return null;
-            }
-            
-            return questState;
-        } catch (e) {
-            localStorage.removeItem('puzzlepath_quest_state');
-            return null;
-        }
-    }
-
-    function clearQuestState() {
-        localStorage.removeItem('puzzlepath_quest_state');
-    }
-
-    function restoreQuestState(questState) {
-        verifiedBookingData = questState.verifiedBookingData;
-        huntData = questState.huntData;
-        customerEmail = questState.customerEmail;
-        completedClues = questState.completedClues;
-        totalClues = questState.totalClues;
-        cluesData = questState.cluesData;
-        
-        if (questState.startTime) {
-            startTime = new Date(questState.startTime);
-        }
-        
-        // Update UI
-        updateQuestInfo();
-        createClueElements();
-        
-        // Hide booking form and show hunt info
-        document.getElementById('bookingContainer').style.display = 'none';
-        document.getElementById('huntInfo').style.display = 'block';
-        
-        if (questState.questStarted) {
-            // Quest was in progress - restore timer and show progress
-            document.getElementById('timerContainer').style.display = 'block';
-            document.getElementById('timerControls').style.display = 'block';
-            document.getElementById('timer').style.display = 'block';
-            document.getElementById('progressBar').style.display = 'block';
-            
-            // Show completed clues
-            for (let i = 0; i < completedClues; i++) {
-                if (document.getElementById(`clue-${i}`)) {
-                    document.getElementById(`clue-${i}`).style.display = 'block';
-                    const checkbox = document.getElementById(`clue-${i}`).querySelector('input[type="checkbox"]');
-                    if (checkbox) checkbox.checked = true;
-                }
-            }
-            
-            // Show current clue if not all completed
-            if (completedClues < totalClues && document.getElementById(`clue-${completedClues}`)) {
-                document.getElementById(`clue-${completedClues}`).style.display = 'block';
-            }
-            
-            // Update progress and restart timer
-            updateProgress();
-            startTimer();
-            
-            // Show finish button if all clues completed
-            if (completedClues === totalClues) {
-                document.getElementById('finishContainer').style.display = 'block';
-                document.getElementById('finishButton').disabled = false;
-                
-                // Hide reset button since quest is completed
-                const resetBtn = document.getElementById('resetQuestBtn');
-                if (resetBtn) resetBtn.style.display = 'none';
-            }
-            
-            showMessage('Quest progress restored! You can continue where you left off.', 'success');
-        } else {
-            // Quest was verified but not started - show start button
-            showStartButton();
-            showMessage('Booking restored! Click "Start Your Quest" to begin.', 'success');
-        }
+    // Function to fill booking code from test buttons
+    function fillBookingCode(code) {
+        document.getElementById('bookingNumber').value = code;
     }
 
     // Add event listener for Enter key on booking number input
     document.addEventListener('DOMContentLoaded', function() {
-        // Always set up booking input handlers and URL parameter processing
         const bookingInput = document.getElementById('bookingNumber');
         if (bookingInput) {
             bookingInput.addEventListener('keypress', function(e) {
@@ -735,41 +561,19 @@
                     verifyBooking();
                 }
             });
-        }
-        
-        // Check for URL booking parameter first
-        const urlParams = new URLSearchParams(window.location.search);
-        const bookingParam = urlParams.get('booking');
-        
-        // Try to restore quest state on page load
-        const savedState = loadQuestState();
-        
-        // If there's a booking parameter in URL, prioritize it over saved state
-        if (bookingParam) {
-            console.log('PuzzlePath Debug: Found booking parameter in URL, clearing saved state');
-            clearQuestState(); // Clear any existing state
-            // Process the new booking parameter below
-        } else if (savedState) {
-            console.log('PuzzlePath Debug: Restoring saved quest state');
-            restoreQuestState(savedState);
-            return; // Skip URL parameter processing for restored state
-        }
-        
-        // Process booking parameter if it exists
-        if (bookingParam && bookingInput) {
-            console.log('PuzzlePath Debug: Auto-filling booking parameter:', bookingParam);
-            bookingInput.value = bookingParam;
-            // Show a helpful message
-            showMessage('Booking number auto-filled from your reservation. Click "Verify Booking" to continue.', 'success');
-            // Auto-verify after a short delay
-            setTimeout(() => {
-                if (bookingInput.value === bookingParam) {
-                    console.log('PuzzlePath Debug: Auto-verifying booking:', bookingParam);
-                    verifyBooking();
-                }
-            }, 2000);
-        } else if (!bookingParam) {
-            console.log('PuzzlePath Debug: No booking parameter found in URL');
+            
+            // Auto-fill booking number from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingParam = urlParams.get('booking');
+            if (bookingParam) {
+                bookingInput.value = bookingParam;
+                showMessage('Booking number auto-filled from your reservation. Click "Verify Booking" to continue.', 'success');
+                setTimeout(() => {
+                    if (bookingInput.value === bookingParam) {
+                        verifyBooking();
+                    }
+                }, 2000);
+            }
         }
     });
 
@@ -1059,6 +863,8 @@
     
     // Main answer submission function
     async function submitAnswer(index) {
+        console.log('DEBUG - submitAnswer called for index:', index);
+        
         const clue = cluesData[index];
         const submitBtn = document.getElementById(`submit-${index}`);
         
@@ -1086,11 +892,15 @@
             if (answerData.numeric !== null) formData.append('answer_numeric', answerData.numeric);
             if (answerData.photo) formData.append('photo', answerData.photo);
             
+            console.log('DEBUG - About to send request to submit_answer.php');
+            
             // Submit to server
             const response = await fetch('submit_answer.php', {
                 method: 'POST',
                 body: formData
             });
+            
+            console.log('DEBUG - Got response from server, status:', response.status);
             
             const result = await response.json();
             
@@ -1124,6 +934,7 @@
                             setTimeout(() => completeClue(index), 1500);
                         } else {
                             // Show manual completion option
+                            console.log('DEBUG - Showing manual continue button');
                             setTimeout(() => {
                                 const answerSection = document.getElementById(`answer-section-${index}`);
                                 answerSection.innerHTML += `
@@ -1143,6 +954,7 @@
             }
             
         } catch (error) {
+            console.log('DEBUG - Error in submitAnswer:', error.message);
             showAnswerFeedback(index, error.message, 'error');
             resetSubmitButton(index, clue.input_type);
         }
@@ -1150,7 +962,9 @@
     
     // Helper function to get answer data based on input type
     function getAnswerData(clue, index) {
-        switch (clue.input_type) {
+        const inputType = clue.input_type || 'none';
+        
+        switch (inputType) {
             case 'none':
                 return { valid: true, text: null, numeric: null, photo: null };
                 
@@ -1300,7 +1114,6 @@
         
         // Show timer controls and timer section
         document.getElementById('timerContainer').style.display = 'block';
-        document.getElementById('timerControls').style.display = 'block';
         document.getElementById('timer').style.display = 'block';
         document.getElementById('progressBar').style.display = 'block';
         
@@ -1340,35 +1153,43 @@
     }
 
     function completeClue(index) {
+        console.log('DEBUG - completeClue called for index:', index);
+        
         completedClues++;
         
-        // Show next clue if not the last one
-        if (index < cluesData.length - 1) {
-            document.getElementById(`clue-${index + 1}`).style.display = 'block';
+        // Hide current clue
+        const currentClue = document.getElementById(`clue-${index}`);
+        if (currentClue) {
+            currentClue.style.display = 'none';
         }
         
-        // Update progress
+        // Show next clue if available
+        if (index < cluesData.length - 1) {
+            const nextClue = document.getElementById(`clue-${index + 1}`);
+            if (nextClue) {
+                nextClue.style.display = 'block';
+                console.log('DEBUG - Showing next clue:', index + 1);
+            }
+        }
+        
         updateProgress();
         
-        // Save quest state after clue completion
-        saveQuestState();
-        
-        // Send clue completion event
-        sendQuestEvent('clue_completed', {
-            clueIndex: index,
-            clueId: cluesData[index].id,
-            completedAt: new Date().toISOString()
-        });
-        
-        // If all clues are completed, show finish button and hide reset
+        // Check if all clues completed
         if (completedClues === totalClues) {
             document.getElementById('finishContainer').style.display = 'block';
             document.getElementById('finishButton').disabled = false;
             
-            // Hide reset button since quest is about to be completed
-            const resetBtn = document.getElementById('resetQuestBtn');
-            if (resetBtn) resetBtn.style.display = 'none';
+            // Send completion event
+            sendQuestEvent('complete', {
+                completionTime: new Date().toISOString(),
+                totalTime: new Date() - startTime,
+                huntId: huntData.hunt_id,
+                bookingCode: verifiedBookingData.booking_code
+            });
         }
+        
+        // Save progress
+        saveQuestState();
     }
 
     function updateProgress() {
@@ -1382,47 +1203,15 @@
         const endTime = new Date();
         const totalTime = endTime - startTime;
         
-        // Stop timer
         clearInterval(timerInterval);
         
-        // Send completion data to server
-        sendQuestEvent('finish', {
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
-            totalTime: totalTime,
-            huntId: huntData.hunt_id,
-            bookingCode: verifiedBookingData.booking_code
-        });
+        alert(`🎉 Quest Completed!\n\nTime: ${formatTime(totalTime)}\nHunt: ${huntData.hunt_name}\nBooking: ${verifiedBookingData.booking_code}\n\nThank you for playing!`);
         
-        // Redirect to registration page with completion data
-        const completionData = {
-            totalTime: totalTime,
-            formattedTime: formatTime(totalTime),
-            completionDate: endTime.toISOString(),
-            bookingCode: verifiedBookingData.booking_code,
-            huntName: huntData.hunt_name,
-            huntId: huntData.hunt_id
-        };
+        // Clear saved state
+        localStorage.removeItem('puzzlepath_quest_state');
         
-        // Store completion data in sessionStorage for the registration page
-        sessionStorage.setItem('questCompletion', JSON.stringify(completionData));
-        
-        // Mark booking as used so it cannot be reused
-        try {
-            fetch('mark_booking_used.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ booking_code: verifiedBookingData.booking_code })
-            }).catch(e => console.warn('Failed to mark booking as used:', e));
-        } catch (e) {
-            console.warn('Failed to mark booking as used:', e);
-        }
-        
-        // Clear quest state since quest is completed
-        clearQuestState();
-        
-        // Redirect to registration page
-        window.location.href = 'register.html';
+        // Optionally redirect or refresh
+        // window.location.reload();
     }
 
     function formatTime(milliseconds) {
@@ -1433,76 +1222,56 @@
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    // Function to toggle timer visibility
-    function toggleTimer() {
-        const timer = document.getElementById('timer');
-        const progressBar = document.getElementById('progressBar');
-        const toggleButton = document.getElementById('timerToggle');
-        
-        if (timer.style.display === 'none') {
-            timer.style.display = 'block';
-            progressBar.style.display = 'block';
-            toggleButton.textContent = '🕐 Hide Timer';
-        } else {
-            timer.style.display = 'none';
-            progressBar.style.display = 'none';
-            toggleButton.textContent = '🕐 Show Timer';
-        }
-    }
-
-    // Function to reset quest and start over
-    function resetQuest() {
-        if (confirm('Are you sure you want to reset your quest? All progress will be lost and you will need to enter your booking number again.')) {
-            clearQuestState();
-            location.reload();
-        }
-    }
-
-    // Function to get first name from customer name
-    function getFirstName(fullName) {
-        if (!fullName) return 'mate';
-        const nameParts = fullName.trim().split(' ');
-        return nameParts[0] || 'mate';
-    }
-
-    // Function to get personalized greeting
-    function getPersonalizedGreeting(customerName) {
-        const firstName = getFirstName(customerName);
-        const greetings = [
-            `G'day ${firstName}!`,
-            `Hi ${firstName}!`,
-            `Hello ${firstName}!`,
-            `Hey ${firstName}!`,
-            `Welcome ${firstName}!`
-        ];
-        return greetings[Math.floor(Math.random() * greetings.length)];
-    }
-
-    // Function to send quest events to server
-    async function sendQuestEvent(action, data) {
-        const eventData = {
-            action: action,
-            ...data,
-            userAgent: navigator.userAgent,
-            timestamp: Date.now()
+    // Quest state management
+    function saveQuestState() {
+        const state = {
+            bookingData: verifiedBookingData,
+            huntData: huntData,
+            completedClues: completedClues,
+            startTime: startTime?.toISOString(),
+            currentClue: completedClues
         };
         
         try {
+            localStorage.setItem('puzzlepath_quest_state', JSON.stringify(state));
+        } catch (error) {
+            console.warn('Could not save quest state:', error);
+        }
+    }
+
+    // Send quest events to server for tracking
+    async function sendQuestEvent(eventType, data) {
+        try {
             const response = await fetch('track_quest.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(eventData)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_type: eventType,
+                    ...data
+                })
             });
             
-            // Don't block user experience if tracking fails
             if (!response.ok) {
-                console.warn('Quest tracking failed:', response.statusText);
+                console.warn('Quest tracking failed:', response.status);
             }
         } catch (error) {
-            console.warn('Quest tracking error:', error);
+            console.warn('Quest tracking failed:', error);
         }
+    }
+
+    // Personalized greeting function
+    function getPersonalizedGreeting(customerName) {
+        if (!customerName) return 'Welcome!';
+        
+        const firstName = customerName.split(' ')[0];
+        const greetings = [
+            `Welcome, ${firstName}!`,
+            `Hello, ${firstName}!`,
+            `Hi there, ${firstName}!`,
+            `Great to see you, ${firstName}!`
+        ];
+        
+        return greetings[Math.floor(Math.random() * greetings.length)];
     }
 </script>
 </body>

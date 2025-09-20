@@ -48,7 +48,7 @@ try {
     $hunt = $huntResult->fetch_assoc();
     $huntStmt->close();
     
-    // Get clues for this hunt
+    // Get clues for this hunt with input type information
     $clueStmt = $db->prepare("
         SELECT 
             id,
@@ -60,7 +60,16 @@ try {
             answer,
             latitude,
             longitude,
-            geofence_radius
+            geofence_radius,
+            input_type,
+            required_answer,
+            answer_options,
+            is_case_sensitive,
+            validation_type,
+            min_value,
+            max_value,
+            photo_required,
+            auto_advance
         FROM wp2s_pp_clues 
         WHERE hunt_id = ? AND is_active = 1 
         ORDER BY clue_order ASC
@@ -82,7 +91,16 @@ try {
             'answer' => $row['answer'],
             'latitude' => $row['latitude'] ? (float)$row['latitude'] : null,
             'longitude' => $row['longitude'] ? (float)$row['longitude'] : null,
-            'geofence_radius' => $row['geofence_radius'] ? (int)$row['geofence_radius'] : null
+            'geofence_radius' => $row['geofence_radius'] ? (int)$row['geofence_radius'] : null,
+            'input_type' => $row['input_type'] ?? 'none',
+            'required_answer' => $row['required_answer'],
+            'answer_options' => $row['answer_options'] ? json_decode($row['answer_options'], true) : null,
+            'is_case_sensitive' => (bool)($row['is_case_sensitive'] ?? false),
+            'validation_type' => $row['validation_type'] ?? 'exact',
+            'min_value' => $row['min_value'] ? (float)$row['min_value'] : null,
+            'max_value' => $row['max_value'] ? (float)$row['max_value'] : null,
+            'photo_required' => (bool)($row['photo_required'] ?? false),
+            'auto_advance' => (bool)($row['auto_advance'] ?? false)
         ];
     }
     

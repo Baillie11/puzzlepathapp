@@ -41,6 +41,15 @@ try {
         throw new Exception('Invalid JSON format');
     }
     
+    // Handle CSRF token request
+    if (isset($input['action']) && $input['action'] === 'get_csrf_token') {
+        echo json_encode([
+            'success' => true,
+            'csrf_token' => generateCSRFToken()
+        ]);
+        exit();
+    }
+    
     if (!isset($input['booking_number']) || empty($input['booking_number'])) {
         throw new Exception('Booking number is required');
     }

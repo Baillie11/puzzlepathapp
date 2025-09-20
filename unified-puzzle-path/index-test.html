@@ -152,7 +152,15 @@
             display: none;
         }
         
-        .task, .hint {
+        .task {
+            margin-top: 0.5em;
+            padding: 0.5em;
+            background: #fff3cd;
+            text-align: center;
+            border-radius: 5px;
+        }
+        
+        .hint {
             display: none;
             margin-top: 0.5em;
             padding: 0.5em;
@@ -541,10 +549,7 @@
             clueElement.innerHTML = `
                 <h3>${clue.title}</h3>
                 <p>${clue.clue.replace(/\n/g, '<br>')}</p>
-                <div class="buttons">
-                    <button onclick="showTask(${index})">Show Task</button>
-                    <div class="task">${clue.task}</div>
-                </div>
+                <div class="task">${clue.task}</div>
                 <div class="buttons">
                     <button onclick="showHint(${index})">Need a Hint?</button>
                     <div class="hint">${clue.hint}</div>
@@ -558,18 +563,10 @@
         });
     }
 
-    function showTask(index) {
-        const clueElement = document.getElementById(`clue-${index}`);
-        const taskButton = clueElement.querySelector('.buttons button');
-        const taskDiv = clueElement.querySelector('.task');
-        
-        taskButton.style.display = 'none';
-        taskDiv.style.display = 'block';
-    }
 
     function showHint(index) {
         const clueElement = document.getElementById(`clue-${index}`);
-        const hintButton = clueElement.querySelectorAll('.buttons button')[1];
+        const hintButton = clueElement.querySelector('.buttons button');
         const hintDiv = clueElement.querySelector('.hint');
         
         hintButton.style.display = 'none';
