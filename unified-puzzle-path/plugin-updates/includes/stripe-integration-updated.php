@@ -61,6 +61,13 @@ class PuzzlePath_Stripe_Integration {
             'callback' => array($this, 'get_booking_status'),
             'permission_callback' => '__return_true'
         ));
+        
+        // New endpoint for free bookings (100% discount)
+        register_rest_route('puzzlepath/v1', '/booking/free', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'process_free_booking'),
+            'permission_callback' => '__return_true'
+        ));
     }
 
     private function get_stripe_keys() {
@@ -231,29 +238,44 @@ class PuzzlePath_Stripe_Integration {
     private function send_confirmation_email($booking, $booking_code) {
         $to = $booking->customer_email;
         $subject = 'Your PuzzlePath Booking Confirmation';
-        $event_title = '';
-        $event_date = '';
         $quest_link = '';
         
         global $wpdb;
         $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pp_events WHERE id = %d", $booking->event_id));
         
-        if ($event) {
-            $event_title = $event->title;
-            $event_date = $event->event_date;
-            
-            // Add quest link if it's a quest event
-            if ($event->hunt_code && $event->hosting_type === 'self_hosted') {
-                $unified_app_url = get_option('puzzlepath_unified_app_url', '');
-                if ($unified_app_url) {
-                    $quest_link = "\n\n🎯 START YOUR QUEST:\nReady to begin your {$event->hunt_name} adventure?\nClick here: {$unified_app_url}\nUse your booking code: {$booking_code}\n";
-                }
+        if ($event && $event->hunt_code && $event->hosting_type === 'self_hosted') {
+            $unified_app_url = get_option('puzzlepath_unified_app_url', '');
+            if ($unified_app_url) {
+                $quest_link = rtrim($unified_app_url, '/');
             }
         }
         
-        $message = "Dear {$booking->customer_name},\n\nThank you for your booking!\n\nBooking Details:\nEvent: {$event_title}\nDate: {$event_date}\nPrice: $".$booking->total_price."\nBooking Code: {$booking_code}{$quest_link}\n\nRegards,\nPuzzlePath Team";
-        
-        wp_mail($to, $subject, $message);
+        // Get HTML email template (this function should be available from settings.php)
+        if (function_exists('get_email_template')) {
+            $message = get_email_template($booking, $booking_code, $event, $quest_link);
+            
+            // Set headers for HTML email
+            $headers = array(
+                'Content-Type: text/html; charset=UTF-8',
+                'From: PuzzlePath Team <info@puzzlepath.com.au>'
+            );
+            
+            wp_mail($to, $subject, $message, $headers);
+        } else {
+            // Fallback to plain text if template function not available
+            $event_title = $event ? $event->title : 'Your Event';
+            $event_date = $event ? $event->event_date : 'TBD';
+            
+            $plain_quest_link = '';
+            if ($quest_link) {
+                $hunt_name = $event ? $event->hunt_name : 'adventure';
+                $plain_quest_link = "\n\n🎯 START YOUR QUEST:\nReady to begin your {$hunt_name}?\nClick here: {$quest_link}?booking={$booking_code}\nUse your booking code: {$booking_code}\n";
+            }
+            
+            $message = "Dear {$booking->customer_name},\n\nThank you for your booking!\n\nBooking Details:\nEvent: {$event_title}\nDate: {$event_date}\nPrice: $".$booking->total_price."\nBooking Code: {$booking_code}{$plain_quest_link}\n\nRegards,\nPuzzlePath Team";
+            
+            wp_mail($to, $subject, $message);
+        }
     }
 
     /**
@@ -312,6 +334,106 @@ class PuzzlePath_Stripe_Integration {
             return new WP_REST_Response(['status' => 'succeeded', 'booking_code' => $booking->booking_code], 200);
         }
         return new WP_REST_Response(['status' => $booking->payment_status], 200);
+    }
+
+    /**
+     * Process free bookings (100% discount) without going through Stripe
+     */
+    public function process_free_booking($request) {
+        global $wpdb;
+        $params = $request->get_json_params();
+
+        // Validate required parameters
+        if (empty($params['event_id']) || empty($params['tickets']) || empty($params['name']) || empty($params['email'])) {
+            return new WP_Error('missing_params', 'Missing required parameters', array('status' => 400));
+        }
+
+        $event_id = intval($params['event_id']);
+        $tickets = intval($params['tickets']);
+        $coupon_code = isset($params['coupon_code']) ? sanitize_text_field($params['coupon_code']) : null;
+
+        // Get event details
+        $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pp_events WHERE id = %d", $event_id));
+
+        if (!$event || $event->seats < $tickets) {
+            return new WP_Error('invalid_event', 'Event not found or not enough seats.', array('status' => 400));
+        }
+
+        $total_price = $event->price * $tickets;
+        $coupon_id = null;
+
+        // Apply coupon if provided
+        if ($coupon_code) {
+            $coupon = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pp_coupons WHERE code = %s AND (expires_at IS NULL OR expires_at > NOW()) AND (max_uses = 0 OR times_used < max_uses)", $coupon_code));
+            if ($coupon) {
+                $total_price = $total_price - ($total_price * ($coupon->discount_percent / 100));
+                $coupon_id = $coupon->id;
+            }
+        }
+
+        // Only process if the total price is 0 (100% discount)
+        if ($total_price > 0) {
+            return new WP_Error('not_free', 'This endpoint is only for free bookings (100% discount)', array('status' => 400));
+        }
+
+        try {
+            // Generate a unique booking code
+            $booking_code = $this->generate_hunt_booking_code($event);
+            
+            // Get hunt ID if applicable
+            $hunt_id = null;
+            if ($event->hunt_code && $event->hosting_type === 'self_hosted') {
+                $hunt_id = $this->get_hunt_id_by_code($event->hunt_code);
+            }
+            
+            // Create booking with 'paid' status since it's free
+            $booking_data = [
+                'event_id' => $event_id,
+                'customer_name' => sanitize_text_field($params['name']),
+                'customer_email' => sanitize_email($params['email']),
+                'tickets' => $tickets,
+                'total_price' => 0.00,
+                'coupon_id' => $coupon_id,
+                'payment_status' => 'paid', // Mark as paid since it's free
+                'booking_code' => $booking_code,
+                'hunt_id' => $hunt_id,
+                'participant_count' => $tickets,
+                'booking_date' => date('Y-m-d')
+            ];
+            
+            $wpdb->insert("{$wpdb->prefix}pp_bookings", $booking_data);
+            $booking_id = $wpdb->insert_id;
+
+            if (!$booking_id) {
+                return new WP_Error('booking_failed', 'Failed to create booking', array('status' => 500));
+            }
+
+            // Get the booking object for email
+            $booking = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}pp_bookings WHERE id = %d", $booking_id));
+            
+            // Decrement seat count
+            $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}pp_events SET seats = seats - %d WHERE id = %d", $tickets, $event_id));
+
+            // Increment coupon usage
+            if ($coupon_id) {
+                $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}pp_coupons SET times_used = times_used + 1 WHERE id = %d", $coupon_id));
+            }
+
+            // Send confirmation email
+            $this->send_confirmation_email($booking, $booking_code);
+
+            return new WP_REST_Response([
+                'success' => true,
+                'booking_id' => $booking_id,
+                'booking_code' => $booking_code,
+                'hunt_code' => $event->hunt_code ?? '',
+                'hunt_name' => $event->hunt_name ?? '',
+                'is_quest_event' => ($event->hunt_code && $event->hosting_type === 'self_hosted')
+            ], 200);
+
+        } catch (Exception $e) {
+            return new WP_Error('booking_error', $e->getMessage(), array('status' => 500));
+        }
     }
 
     /**
