@@ -552,6 +552,34 @@
                 padding: 0.6em;
             }
         }
+        
+        /* Ensure continue buttons are always visible */
+        .continue-clue-btn {
+            background: #4CAF50 !important;
+            color: white !important;
+            border: 3px solid #45a049 !important;
+            padding: 20px 40px !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+            border-radius: 10px !important;
+            cursor: pointer !important;
+            display: block !important;
+            margin: 20px auto !important;
+            width: 100% !important;
+            max-width: 350px !important;
+            position: relative !important;
+            z-index: 9999 !important;
+            text-align: center !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+            transition: all 0.3s ease !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .continue-clue-btn:hover {
+            background: #45a049 !important;
+            transform: translateY(-2px) !important;
+        }
     </style>
 </head>
 <body>
@@ -889,13 +917,56 @@
         });
     }
 
+    // Auto-detect input type based on task description
+    function detectInputTypeFromTask(clue, index) {
+        const task = (clue.task || '').toLowerCase();
+        const clueText = (clue.clue || '').toLowerCase();
+        
+        // Keywords that indicate text input is needed
+        const textKeywords = [
+            'type', 'enter', 'write', 'spell', 'word', 'letter', 'number',
+            'what is', 'how many', 'count', 'find the word', 'read the sign',
+            'note down', 'displayed', 'year', 'name', 'plaque', 'sign',
+            'calculate', 'add', 'subtract', 'total', 'answer', 'result',
+            'identify', 'list', 'tell', 'state', 'give', 'provide'
+        ];
+        
+        // Keywords that indicate photo input is needed  
+        const photoKeywords = [
+            'photo', 'picture', 'selfie', 'take a', 'snap', 'pose', 'image'
+        ];
+        
+        const fullText = task + ' ' + clueText;
+        
+        // Check for photo requirements first
+        if (photoKeywords.some(keyword => fullText.includes(keyword))) {
+            return 'photo';
+        }
+        
+        // Check for text input requirements
+        if (textKeywords.some(keyword => fullText.includes(keyword))) {
+            return 'text';
+        }
+        
+        // Default to none (just completion marking)
+        return 'none';
+    }
+
     // Generate answer input section based on clue input type
     function generateAnswerSection(clue, index) {
         // Debug logging
         console.log('DEBUG - generateAnswerSection called for clue:', clue.title, 'input_type:', clue.input_type);
         
-        // Handle undefined or null input_type by defaulting to 'none'
-        const inputType = clue.input_type || 'none';
+        // Auto-detect input type if missing or 'none' but task suggests otherwise
+        let inputType = clue.input_type || 'none';
+        
+        if (inputType === 'none' || !inputType) {
+            const detectedType = detectInputTypeFromTask(clue, index);
+            console.log('DEBUG - generateAnswerSection auto-detected input type:', detectedType, 'for clue:', clue.title);
+            inputType = detectedType;
+        }
+        
+        console.log('DEBUG - Final input type used in generateAnswerSection:', inputType, 'for clue:', clue.title);
         
         if (inputType === 'none') {
             return `
@@ -990,6 +1061,75 @@
                 </button>
             </div>
         `;
+    }
+    
+    // Centralized function to show continue buttons
+    function showContinueButton(index) {
+        console.log('DEBUG - showContinueButton called for index:', index);
+        
+        const answerSection = document.getElementById(`answer-section-${index}`);
+        if (!answerSection) {
+            console.error('DEBUG - answerSection not found for index:', index);
+            return;
+        }
+        
+        // Remove any existing continue buttons first
+        const existingButtons = answerSection.querySelectorAll('.continue-clue-btn');
+        existingButtons.forEach(btn => btn.remove());
+        console.log('DEBUG - Removed', existingButtons.length, 'existing continue buttons');
+        
+        // Create new continue button
+        const continueBtn = document.createElement('button');
+        continueBtn.className = 'continue-clue-btn'; // Different class to avoid conflicts
+        continueBtn.style.cssText = `
+            background: #4CAF50 !important;
+            color: white !important;
+            border: 3px solid #45a049 !important;
+            padding: 20px 40px !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+            border-radius: 10px !important;
+            cursor: pointer !important;
+            display: block !important;
+            margin: 20px auto !important;
+            width: 100% !important;
+            max-width: 350px !important;
+            position: relative !important;
+            z-index: 9999 !important;
+            text-align: center !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+            transition: all 0.3s ease !important;
+        `;
+        continueBtn.textContent = '✅ Continue to Next Clue';
+        continueBtn.onclick = function() {
+            console.log('DEBUG - Continue button clicked for index:', index);
+            completeClue(index);
+        };
+        
+        // Add hover effect
+        continueBtn.onmouseover = function() {
+            this.style.backgroundColor = '#45a049';
+            this.style.transform = 'translateY(-2px)';
+        };
+        continueBtn.onmouseout = function() {
+            this.style.backgroundColor = '#4CAF50';
+            this.style.transform = 'translateY(0)';
+        };
+        
+        answerSection.appendChild(continueBtn);
+        console.log('DEBUG - Continue button created and added to DOM');
+        
+        // Force a repaint to ensure visibility
+        continueBtn.offsetHeight; // Trigger reflow
+        
+        // Double-check it's visible after a short delay
+        setTimeout(() => {
+            const isVisible = continueBtn.offsetParent !== null;
+            console.log('DEBUG - Continue button visibility check:', isVisible);
+            if (!isVisible) {
+                console.error('DEBUG - Continue button was created but is not visible!');
+            }
+        }, 100);
     }
     
     function showHint(index) {
@@ -1096,6 +1236,9 @@
             
             // DEBUG: Log the full response
             console.log('DEBUG - Submit response:', result);
+            console.log('DEBUG - Current clue index:', index);
+            console.log('DEBUG - Current clue data:', clue);
+            console.log('DEBUG - Answer data sent:', { text: answerData.text, numeric: answerData.numeric, photo: !!answerData.photo });
             
             if (result.success) {
                 // Show success feedback
@@ -1106,37 +1249,29 @@
                     // Mark clue as completed
                     markClueCompleted(index);
                     
-                    // For already completed clues, immediately show continue option
-                    if (result.already_completed) {
-                        console.log('DEBUG - Already completed, showing continue button');
-                        setTimeout(() => {
-                            console.log('DEBUG - Adding continue button to DOM');
-                            const answerSection = document.getElementById(`answer-section-${index}`);
-                            answerSection.innerHTML += `
-                                <button class="submit-answer-btn" onclick="completeClue(${index})" style="background: #4CAF50;">
-                                    ✅ Continue to Next Clue
-                                </button>
-                            `;
-                        }, 500);
-                    } else {
-                        // Auto-advance if specified
-                        if (result.auto_advance) {
-                            setTimeout(() => completeClue(index), 1500);
-                        } else {
-                            // Show manual completion option
-                            setTimeout(() => {
-                                const answerSection = document.getElementById(`answer-section-${index}`);
-                                answerSection.innerHTML += `
-                                    <button class="submit-answer-btn" onclick="completeClue(${index})" style="background: #4CAF50;">
-                                        ✅ Continue to Next Clue
-                                    </button>
-                                `;
-                            }, 1000);
-                        }
-                    }
+                    // Automatically advance to next clue after short delay
+                    console.log('DEBUG - Correct answer, auto-advancing to next clue');
+                    setTimeout(() => {
+                        completeClue(index);
+                    }, 1500);
+                    
                 } else {
-                    // Re-enable submit for another attempt
-                    resetSubmitButton(index, clue.input_type);
+                    // Incorrect answer - clear input field and show error
+                    console.log('DEBUG - Incorrect answer, clearing input field');
+                    
+                    // Clear the input field
+                    const inputField = document.getElementById(`answer-${index}`);
+                    if (inputField) {
+                        inputField.value = '';
+                        inputField.focus(); // Put cursor back in field
+                    }
+                    
+                    // Re-enable submit button
+                    let inputType = clue.input_type || 'none';
+                    if (inputType === 'none' || !inputType) {
+                        inputType = detectInputTypeFromTask(clue, index);
+                    }
+                    resetSubmitButton(index, inputType);
                 }
             } else {
                 throw new Error(result.message);
@@ -1144,13 +1279,27 @@
             
         } catch (error) {
             showAnswerFeedback(index, error.message, 'error');
-            resetSubmitButton(index, clue.input_type);
+            // Use same input type detection logic
+            let inputType = clue.input_type || 'none';
+            if (inputType === 'none' || !inputType) {
+                inputType = detectInputTypeFromTask(clue, index);
+            }
+            resetSubmitButton(index, inputType);
         }
     }
     
     // Helper function to get answer data based on input type
     function getAnswerData(clue, index) {
-        switch (clue.input_type) {
+        // Use the same input type detection logic as generateAnswerSection
+        let inputType = clue.input_type || 'none';
+        
+        if (inputType === 'none' || !inputType) {
+            const detectedType = detectInputTypeFromTask(clue, index);
+            console.log('DEBUG - getAnswerData auto-detected input type:', detectedType, 'for clue:', clue.title);
+            inputType = detectedType;
+        }
+        
+        switch (inputType) {
             case 'none':
                 return { valid: true, text: null, numeric: null, photo: null };
                 
@@ -1340,11 +1489,22 @@
     }
 
     function completeClue(index) {
+        console.log('DEBUG - completeClue called with index:', index);
+        console.log('DEBUG - completedClues before increment:', completedClues);
+        console.log('DEBUG - totalClues:', totalClues);
+        console.log('DEBUG - cluesData.length:', cluesData.length);
+        
         completedClues++;
+        
+        console.log('DEBUG - completedClues after increment:', completedClues);
         
         // Show next clue if not the last one
         if (index < cluesData.length - 1) {
-            document.getElementById(`clue-${index + 1}`).style.display = 'block';
+            const nextClueId = `clue-${index + 1}`;
+            console.log('DEBUG - Showing next clue:', nextClueId);
+            document.getElementById(nextClueId).style.display = 'block';
+        } else {
+            console.log('DEBUG - This was the last clue');
         }
         
         // Update progress
