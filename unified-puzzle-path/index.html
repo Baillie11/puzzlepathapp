@@ -537,6 +537,24 @@
                 grid-template-columns: 1fr;
                 gap: 0.5em;
             }
+            
+            /* Fix timer control buttons alignment on mobile */
+            .timer-toggle-btn {
+                display: inline-block !important;
+                width: auto !important;
+                margin: 0.2em 0.25em !important;
+                padding: 8px 12px !important;
+                font-size: 13px !important;
+                white-space: nowrap;
+            }
+            
+            .timer-controls {
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 8px !important;
+                flex-wrap: wrap !important;
+            }
         }
         
         @media (max-width: 480px) {
@@ -648,9 +666,49 @@
     let huntData = null;
     let cluesData = [];
     let customerEmail = null; // Store customer email for future use
+    let autoSaveInterval = null; // Auto-save timer
 
     // Session persistence functions
     function saveQuestState() {
+        // Collect user answers from all clue inputs
+        const userAnswers = {};
+        const completedClueStatuses = {};
+        
+        for (let i = 0; i < (cluesData?.length || 0); i++) {
+            const clueElement = document.getElementById(`clue-${i}`);
+            if (clueElement) {
+                // Check if clue is marked as completed
+                completedClueStatuses[i] = clueElement.classList.contains('completed');
+                
+                // Save text/number inputs
+                const textInput = document.getElementById(`answer-${i}`);
+                if (textInput && textInput.value) {
+                    userAnswers[i] = {
+                        type: 'text',
+                        value: textInput.value
+                    };
+                }
+                
+                // Save multiple choice selections
+                const selectedRadio = document.querySelector(`input[name="answer-${i}"]:checked`);
+                if (selectedRadio) {
+                    userAnswers[i] = {
+                        type: 'radio',
+                        value: selectedRadio.value
+                    };
+                }
+                
+                // Save photo uploads (just track that it was uploaded)
+                const photoInput = document.getElementById(`photo-${i}`);
+                if (photoInput && photoInput.files && photoInput.files.length > 0) {
+                    userAnswers[i] = {
+                        type: 'photo',
+                        filename: photoInput.files[0].name
+                    };
+                }
+            }
+        }
+        
         const questState = {
             verifiedBookingData: verifiedBookingData,
             huntData: huntData,
@@ -660,9 +718,13 @@
             startTime: startTime ? startTime.getTime() : null,
             cluesData: cluesData,
             questStarted: startTime !== null,
+            userAnswers: userAnswers,
+            completedClueStatuses: completedClueStatuses,
             timestamp: Date.now()
         };
+        
         localStorage.setItem('puzzlepath_quest_state', JSON.stringify(questState));
+        console.log('DEBUG - Quest state saved with', Object.keys(userAnswers).length, 'user answers');
     }
 
     function loadQuestState() {
@@ -689,12 +751,120 @@
     function clearQuestState() {
         localStorage.removeItem('puzzlepath_quest_state');
     }
+    
+    function restoreUserAnswers(userAnswers, completedStatuses) {
+        console.log('DEBUG - restoreUserAnswers called');
+        
+        Object.keys(userAnswers).forEach(clueIndex => {
+            const answer = userAnswers[clueIndex];
+            const i = parseInt(clueIndex);
+            
+            console.log('DEBUG - Restoring answer for clue', i, ':', answer);
+            
+            switch (answer.type) {
+                case 'text':
+                    const textInput = document.getElementById(`answer-${i}`);
+                    if (textInput) {
+                        textInput.value = answer.value;
+                        console.log('DEBUG - Restored text input for clue', i);
+                    }
+                    break;
+                    
+                case 'radio':
+                    const radioInput = document.querySelector(`input[name="answer-${i}"][value="${answer.value}"]`);
+                    if (radioInput) {
+                        radioInput.checked = true;
+                        console.log('DEBUG - Restored radio selection for clue', i);
+                    }
+                    break;
+                    
+                case 'photo':
+                    // For photos, we can't restore the actual file, but we can show a message
+                    const photoFeedback = document.getElementById(`feedback-${i}`);
+                    if (photoFeedback) {
+                        photoFeedback.innerHTML = `📸 Previous photo: "${answer.filename}" was uploaded. You may need to re-upload if submitting again.`;
+                        photoFeedback.className = 'answer-feedback';
+                        photoFeedback.style.display = 'block';
+                        photoFeedback.style.color = '#666';
+                        photoFeedback.style.fontStyle = 'italic';
+                        console.log('DEBUG - Restored photo info for clue', i);
+                    }
+                    break;
+            }
+        });
+        
+        // Update submit button states for completed clues
+        Object.keys(completedStatuses).forEach(clueIndex => {
+            const i = parseInt(clueIndex);
+            if (completedStatuses[clueIndex]) {
+                const submitBtn = document.getElementById(`submit-${i}`);
+                if (submitBtn) {
+                    submitBtn.textContent = '✅ Completed';
+                    submitBtn.disabled = true;
+                    submitBtn.style.backgroundColor = '#28a745';
+                    console.log('DEBUG - Updated submit button for completed clue', i);
+                }
+            }
+        });
+        
+        console.log('DEBUG - Finished restoring user answers');
+    }
+    
+    function startAutoSave() {
+        // Save quest state every 30 seconds while quest is active
+        if (autoSaveInterval) {
+            clearInterval(autoSaveInterval);
+        }
+        
+        autoSaveInterval = setInterval(() => {
+            if (startTime && verifiedBookingData) { // Only auto-save if quest is active
+                console.log('DEBUG - Auto-saving quest state');
+                saveQuestState();
+            }
+        }, 30000); // 30 seconds
+        
+        console.log('DEBUG - Auto-save started (every 30 seconds)');
+    }
+    
+    function stopAutoSave() {
+        if (autoSaveInterval) {
+            clearInterval(autoSaveInterval);
+            autoSaveInterval = null;
+            console.log('DEBUG - Auto-save stopped');
+        }
+    }
+    
+    function addInputChangeListeners() {
+        console.log('DEBUG - Adding input change listeners for auto-save');
+        
+        // Add change listeners to all input fields
+        document.addEventListener('change', function(event) {
+            if (event.target.matches('input[id^="answer-"], input[name^="answer-"], input[id^="photo-"]')) {
+                console.log('DEBUG - Input changed, saving quest state');
+                setTimeout(() => saveQuestState(), 1000); // Delay to avoid too frequent saves
+            }
+        });
+        
+        // Add input listeners for text fields (on typing)
+        document.addEventListener('input', function(event) {
+            if (event.target.matches('input[id^="answer-"][type="text"], input[id^="answer-"][type="number"]')) {
+                // Debounce saves during typing
+                clearTimeout(window.inputSaveTimeout);
+                window.inputSaveTimeout = setTimeout(() => {
+                    console.log('DEBUG - Text input changed, saving quest state');
+                    saveQuestState();
+                }, 2000); // Save 2 seconds after user stops typing
+            }
+        });
+    }
 
     function restoreQuestState(questState) {
+        console.log('DEBUG - Restoring quest state:', questState);
+        
         verifiedBookingData = questState.verifiedBookingData;
         huntData = questState.huntData;
         customerEmail = questState.customerEmail;
-        completedClues = questState.completedClues;
+        completedClues = questState.completedClues || 0;
         totalClues = questState.totalClues;
         cluesData = questState.cluesData;
         
@@ -705,6 +875,18 @@
         // Update UI
         updateQuestInfo();
         createClueElements();
+        
+        // Restore user answers and completed states
+        const userAnswers = questState.userAnswers || {};
+        const completedStatuses = questState.completedClueStatuses || {};
+        
+        console.log('DEBUG - Restoring', Object.keys(userAnswers).length, 'user answers');
+        console.log('DEBUG - Restoring completed statuses for', Object.keys(completedStatuses).length, 'clues');
+        
+        // Wait a moment for DOM elements to be created
+        setTimeout(() => {
+            restoreUserAnswers(userAnswers, completedStatuses);
+        }, 100);
         
         // Hide booking form and show hunt info
         document.getElementById('bookingContainer').style.display = 'none';
@@ -717,23 +899,26 @@
             document.getElementById('timer').style.display = 'block';
             document.getElementById('progressBar').style.display = 'block';
             
-            // Show completed clues
-            for (let i = 0; i < completedClues; i++) {
-                if (document.getElementById(`clue-${i}`)) {
-                    document.getElementById(`clue-${i}`).style.display = 'block';
-                    const checkbox = document.getElementById(`clue-${i}`).querySelector('input[type="checkbox"]');
-                    if (checkbox) checkbox.checked = true;
+            // Show completed and current clues
+            for (let i = 0; i <= completedClues; i++) {
+                const clueElement = document.getElementById(`clue-${i}`);
+                if (clueElement) {
+                    clueElement.style.display = 'block';
+                    
+                    // Mark completed clues with completed class
+                    if (i < completedClues || completedStatuses[i]) {
+                        clueElement.classList.add('completed');
+                        console.log('DEBUG - Marked clue', i, 'as completed during restore');
+                    }
                 }
-            }
-            
-            // Show current clue if not all completed
-            if (completedClues < totalClues && document.getElementById(`clue-${completedClues}`)) {
-                document.getElementById(`clue-${completedClues}`).style.display = 'block';
             }
             
             // Update progress and restart timer
             updateProgress();
             startTimer();
+            
+            // Restart auto-save
+            startAutoSave();
             
             // Show finish button if all clues completed
             if (completedClues === totalClues) {
@@ -755,6 +940,9 @@
 
     // Add event listener for Enter key on booking number input
     document.addEventListener('DOMContentLoaded', function() {
+        // Set up input change listeners for auto-save
+        addInputChangeListeners();
+        
         // Always set up booking input handlers and URL parameter processing
         const bookingInput = document.getElementById('bookingNumber');
         if (bookingInput) {
@@ -896,25 +1084,66 @@
         container.innerHTML = '';
         
         cluesData.forEach((clue, index) => {
-            const clueElement = document.createElement('div');
-            clueElement.className = 'clue';
-            clueElement.style.display = 'none';
-            clueElement.innerHTML = `
-                <h3>${clue.title}</h3>
-                <p>${clue.clue.replace(/\n/g, '<br>')}</p>
-                <div class="task auto-shown">
-                    <span class="task-label">Task</span>
-                    ${clue.task}
-                </div>
-                ${generateAnswerSection(clue, index)}
-                <div class="buttons">
-                    <button onclick="showHint(${index})">Need a Hint?</button>
-                    <div class="hint">${clue.hint}</div>
-                </div>
-            `;
-            clueElement.id = `clue-${index}`;
-            container.appendChild(clueElement);
+            createSingleClueElement(clue, index, container);
         });
+    }
+    
+    function createSingleClueElement(clue, index, container) {
+        if (!container) {
+            container = document.getElementById('clueContainer');
+        }
+        
+        const clueElement = document.createElement('div');
+        clueElement.className = 'clue';
+        clueElement.style.display = 'none';
+        clueElement.innerHTML = `
+            <h3>${clue.title}</h3>
+            <p>${clue.clue.replace(/\n/g, '<br>')}</p>
+            <div class="task auto-shown">
+                <span class="task-label">Task</span>
+                ${clue.task}
+            </div>
+            ${generateAnswerSection(clue, index)}
+            <div class="buttons">
+                <button onclick="showHint(${index})">Need a Hint?</button>
+                <div class="hint">${clue.hint}</div>
+            </div>
+        `;
+        clueElement.id = `clue-${index}`;
+        container.appendChild(clueElement);
+        
+        console.log('DEBUG - Created clue element:', clueElement.id);
+        return clueElement;
+    }
+    
+    function createMissingClueElement(clueIndex) {
+        console.log('DEBUG - createMissingClueElement called for index:', clueIndex);
+        
+        if (!cluesData || clueIndex >= cluesData.length) {
+            console.error('DEBUG - Cannot create missing clue: invalid index or no data');
+            return null;
+        }
+        
+        const existingElement = document.getElementById(`clue-${clueIndex}`);
+        if (existingElement) {
+            console.log('DEBUG - Clue element already exists, just showing it');
+            existingElement.style.display = 'block';
+            return existingElement;
+        }
+        
+        const clue = cluesData[clueIndex];
+        const container = document.getElementById('clueContainer');
+        
+        if (!container) {
+            console.error('DEBUG - Clue container not found');
+            return null;
+        }
+        
+        const newElement = createSingleClueElement(clue, clueIndex, container);
+        newElement.style.display = 'block';
+        
+        console.log('DEBUG - Successfully created and showed missing clue element:', newElement.id);
+        return newElement;
     }
 
     // Auto-detect input type based on task description
@@ -1249,15 +1478,40 @@
                     // Mark clue as completed
                     markClueCompleted(index);
                     
+                    // Save quest state immediately after correct answer
+                    console.log('DEBUG - Saving quest state after correct answer');
+                    saveQuestState();
+                    
                     // Automatically advance to next clue after short delay
                     console.log('DEBUG - Correct answer, auto-advancing to next clue');
+                    console.log('DEBUG - Setting timeout to call completeClue with index:', index);
+                    
                     setTimeout(() => {
-                        completeClue(index);
+                        try {
+                            console.log('DEBUG - Timeout callback executing, calling completeClue with index:', index);
+                            completeClue(index);
+                        } catch (error) {
+                            console.error('DEBUG - Error in completeClue timeout callback:', error);
+                            // Fallback: try to manually show next clue
+                            const nextIndex = index + 1;
+                            if (nextIndex < cluesData.length) {
+                                const nextElement = document.getElementById(`clue-${nextIndex}`);
+                                if (nextElement) {
+                                    nextElement.style.display = 'block';
+                                    console.log('DEBUG - Fallback: manually showed next clue');
+                                } else {
+                                    console.error('DEBUG - Fallback failed: next clue element not found');
+                                }
+                            }
+                        }
                     }, 1500);
                     
                 } else {
-                    // Incorrect answer - clear input field and show error
-                    console.log('DEBUG - Incorrect answer, clearing input field');
+                    // Incorrect answer - save state first, then clear input field
+                    console.log('DEBUG - Incorrect answer, saving state then clearing input field');
+                    
+                    // Save quest state to preserve any partial progress
+                    saveQuestState();
                     
                     // Clear the input field
                     const inputField = document.getElementById(`answer-${index}`);
@@ -1455,11 +1709,30 @@
         
         // Show first clue
         if (cluesData.length > 0) {
-            document.getElementById('clue-0').style.display = 'block';
+            // Ensure all clue elements exist before starting
+            console.log('DEBUG - Validating all clue elements exist before starting quest');
+            for (let i = 0; i < cluesData.length; i++) {
+                const clueElement = document.getElementById(`clue-${i}`);
+                if (!clueElement) {
+                    console.warn('DEBUG - Missing clue element for index:', i, '- creating it now');
+                    createMissingClueElement(i);
+                }
+            }
+            
+            const firstClue = document.getElementById('clue-0');
+            if (firstClue) {
+                firstClue.style.display = 'block';
+                console.log('DEBUG - Successfully showed first clue');
+            } else {
+                console.error('DEBUG - First clue element not found even after validation!');
+            }
         }
         
         // Start timer
         startTimer();
+        
+        // Start auto-save
+        startAutoSave();
         
         // Update progress
         updateProgress();
@@ -1494,15 +1767,60 @@
         console.log('DEBUG - totalClues:', totalClues);
         console.log('DEBUG - cluesData.length:', cluesData.length);
         
+        // Validate input parameters
+        if (index === undefined || index === null || index < 0) {
+            console.error('DEBUG - completeClue: Invalid index provided:', index);
+            return;
+        }
+        
+        if (!cluesData || cluesData.length === 0) {
+            console.error('DEBUG - completeClue: No clues data available');
+            return;
+        }
+        
         completedClues++;
         
         console.log('DEBUG - completedClues after increment:', completedClues);
         
         // Show next clue if not the last one
         if (index < cluesData.length - 1) {
-            const nextClueId = `clue-${index + 1}`;
-            console.log('DEBUG - Showing next clue:', nextClueId);
-            document.getElementById(nextClueId).style.display = 'block';
+            const nextClueIndex = index + 1;
+            const nextClueId = `clue-${nextClueIndex}`;
+            console.log('DEBUG - Showing next clue:', nextClueId, 'for clue index:', nextClueIndex);
+            
+            const nextClueElement = document.getElementById(nextClueId);
+            if (nextClueElement) {
+                // Remove any hidden classes and show the element
+                nextClueElement.classList.remove('hidden');
+                nextClueElement.style.display = 'block';
+                nextClueElement.style.visibility = 'visible';
+                nextClueElement.style.opacity = '1';
+                
+                console.log('DEBUG - Successfully showed next clue element:', nextClueId);
+                
+                // Scroll to the new clue to make it visible
+                setTimeout(() => {
+                    nextClueElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start',
+                        inline: 'nearest'
+                    });
+                }, 100);
+                
+            } else {
+                console.error('DEBUG - Next clue element not found in DOM:', nextClueId);
+                console.log('DEBUG - Available clue elements in DOM:');
+                const allClues = document.querySelectorAll('[id^="clue-"]');
+                allClues.forEach((el, idx) => {
+                    console.log(`  - ${el.id} (display: ${el.style.display || 'default'})`);
+                });
+                
+                // Attempt to recover by regenerating clue elements
+                console.log('DEBUG - Attempting to regenerate clue elements...');
+                if (cluesData && cluesData.length > nextClueIndex) {
+                    createMissingClueElement(nextClueIndex);
+                }
+            }
         } else {
             console.log('DEBUG - This was the last clue');
         }
@@ -1522,6 +1840,7 @@
         
         // If all clues are completed, show finish button and hide reset
         if (completedClues === totalClues) {
+            console.log('DEBUG - All clues completed, showing finish button');
             document.getElementById('finishContainer').style.display = 'block';
             document.getElementById('finishButton').disabled = false;
             
@@ -1544,6 +1863,9 @@
         
         // Stop timer
         clearInterval(timerInterval);
+        
+        // Stop auto-save
+        stopAutoSave();
         
         // Send completion data to server
         sendQuestEvent('finish', {

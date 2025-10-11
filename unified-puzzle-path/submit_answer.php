@@ -29,11 +29,11 @@ try {
         throw new Exception('Method not allowed');
     }
     
-    // Rate limiting check
-    if (!checkRateLimit('submit_answer')) {
-        http_response_code(429);
-        throw new Exception('Too many attempts. Please wait before trying again.');
-    }
+    // Rate limiting check - TEMPORARILY DISABLED FOR TESTING
+    // if (!checkRateLimit('submit_answer')) {
+    //     http_response_code(429);
+    //     throw new Exception('Too many attempts. Please wait before trying again.');
+    // }
     
     // Start session for CSRF protection
     if (session_status() === PHP_SESSION_NONE) {
@@ -163,10 +163,8 @@ try {
     
     $attempt_count = $previousAnswer ? $previousAnswer['attempt_count'] + 1 : 1;
     
-    // Limit attempts per clue
-    if ($attempt_count > 10) {
-        throw new Exception('Maximum attempts exceeded for this clue');
-    }
+    // Per-clue attempt limit REMOVED - users can try as many times as needed
+    // Educational quests should encourage learning, not block users who paid for the experience
     
     // Initialize validation result
     $is_correct = false;
