@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Demo - Puzzle Path</title>
+    <link rel="icon" type="image/png" href="puzzlepath-logo-web.png">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .demo-container {
+            background: white;
+            padding: 3em;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 600px;
+            margin: 2em;
+        }
+        .logo {
+            font-size: 3em;
+            margin-bottom: 0.5em;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 0.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 2em;
+            font-size: 1.1em;
+        }
+        .demo-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5em;
+            margin: 2em 0;
+        }
+        .demo-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            padding: 2em 1.5em;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: #5a67d8;
+        }
+        .demo-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .demo-card:hover::before {
+            transform: translateX(100%);
+        }
+        .demo-icon {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            display: block;
+        }
+        .demo-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+            color: #667eea;
+        }
+        .demo-description {
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.4;
+        }
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5em;
+            margin: 2em 0;
+            text-align: left;
+        }
+        .info-section h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+            position: relative;
+        }
+        .feature-list li::before {
+            content: '✨';
+            position: absolute;
+            left: 0;
+        }
+        .live-demo-note {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 1em;
+            border-radius: 8px;
+            margin-top: 2em;
+            border-left: 4px solid #17a2b8;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 2em;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            color: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="logo">🎯</div>
+        <h1>Dashboard Demo</h1>
+        <p class="subtitle">Experience the Puzzle Path dashboard with different user profiles</p>
+        
+        <div class="demo-links">
+            <a href="dashboard.php?demo=true&profile=basic" class="demo-card">
+                <span class="demo-icon">🌱</span>
+                <div class="demo-title">Basic User</div>
+                <div class="demo-description">New user with 1 completed quest and 1 medal</div>
+            </a>
+            
+            <a href="dashboard.php?demo=true&profile=intermediate" class="demo-card">
+                <span class="demo-icon">⭐</span>
+                <div class="demo-title">Intermediate User</div>
+                <div class="demo-description">Active user with 3 quests and 4 medals</div>
+            </a>
+            
+            <a href="dashboard.php?demo=true&profile=advanced" class="demo-card">
+                <span class="demo-icon">👑</span>
+                <div class="demo-title">Advanced User</div>
+                <div class="demo-description">Expert with 5 quests and 8 medals</div>
+            </a>
+        </div>
+        
+        <div class="info-section">
+            <h3>🎮 What You'll See in Demo Mode</h3>
+            <ul class="feature-list">
+                <li><strong>Personalized Dashboard</strong> - Greeting with user's first name</li>
+                <li><strong>Latest Achievement</strong> - Most recent quest completion with details</li>
+                <li><strong>Medal Collection</strong> - Visual display of earned medals</li>
+                <li><strong>User Statistics</strong> - Quest count, medals, times, and totals</li>
+                <li><strong>Quest History</strong> - Complete list of all completed adventures</li>
+                <li><strong>Difficulty Badges</strong> - Visual indicators for quest complexity</li>
+            </ul>
+        </div>
+        
+        <div class="live-demo-note">
+            <strong>💡 Live Demo:</strong> All data shown in demo mode is sample data. In the real application, 
+            this information would be pulled from the database based on actual user completions and achievements.
+        </div>
+        
+        <a href="index.html" class="back-link">← Back to Main App</a>
+    </div>
+</body>
+</html>

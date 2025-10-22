@@ -83,12 +83,20 @@ try {
     // Log to file for development purposes
     error_log("REGISTRATION: " . json_encode($logData) . "\n", 3, 'registration.log');
     
+    // Store user session data for dashboard
+    session_start();
+    $userId = rand(1000, 9999); // Simulated user ID
+    $_SESSION['user_id'] = $userId;
+    $_SESSION['user_name'] = $firstName . ' ' . $lastName;
+    $_SESSION['user_email'] = $email;
+    $_SESSION['completion_data'] = $completionData; // Pass completion data to dashboard
+    
     // Return success response
     echo json_encode([
         'success' => true,
         'message' => "Welcome aboard, $firstName! Your achievement has been recorded and your account has been created successfully.",
         'data' => [
-            'userId' => rand(1000, 9999), // Simulated user ID
+            'userId' => $userId,
             'firstName' => $firstName,
             'lastName' => $lastName,
             'email' => $email,
