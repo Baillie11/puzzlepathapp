@@ -43,6 +43,13 @@ define('PP_RATE_LIMIT_WINDOW', 300); // 5 minutes
 define('MIN_QUEST_TIME', max(300, (int)getenv('PP_MIN_QUEST_TIME') ?: 300));    // 5 minutes minimum
 define('MAX_QUEST_TIME', min(14400, (int)getenv('PP_MAX_QUEST_TIME') ?: 14400)); // 4 hours maximum
 
+// Geofencing Settings
+define('GEOFENCING_ENABLED', getenv('PP_GEOFENCING_ENABLED') === 'false' ? false : true); // Default enabled
+define('GEOFENCE_ENFORCEMENT_MODE', getenv('PP_GEOFENCE_MODE') ?: 'soft'); // 'soft' or 'hard'
+define('MAPS_PROVIDER', getenv('PP_MAPS_PROVIDER') ?: 'leaflet'); // 'leaflet' or 'google'
+define('GOOGLE_MAPS_API_KEY', getenv('PP_GOOGLE_MAPS_KEY') ?: ''); // Optional Google Maps API key
+define('MIN_GEOFENCE_RADIUS', (int)getenv('PP_MIN_GEOFENCE_RADIUS') ?: 25); // Minimum radius in meters
+
 // File paths with proper validation
 define('UPLOAD_PATH', 'uploads/');
 define('MEDAL_IMAGES_PATH', 'medals/');
