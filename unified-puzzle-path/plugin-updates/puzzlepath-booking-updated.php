@@ -123,9 +123,10 @@ add_action('plugins_loaded', 'puzzlepath_update_db_check');
  * Centralized function to create all admin menus.
  */
 function puzzlepath_register_admin_menus() {
-    add_menu_page('PuzzlePath Bookings', 'PuzzlePath', 'manage_options', 'puzzlepath-booking', 'puzzlepath_events_page', 'dashicons-tickets-alt', 20);
+    add_menu_page('PuzzlePath Bookings', 'PuzzlePath', 'manage_options', 'puzzlepath-booking', 'puzzlepath_events_page', 'dashicons-admin-tools', 20);
     add_submenu_page('puzzlepath-booking', 'Events', 'Events', 'manage_options', 'puzzlepath-events', 'puzzlepath_events_page');
     add_submenu_page('puzzlepath-booking', 'Coupons', 'Coupons', 'manage_options', 'puzzlepath-coupons', 'puzzlepath_coupons_page');
+    add_submenu_page('puzzlepath-booking', 'Email Settings', 'Email Settings', 'manage_options', 'puzzlepath-email-settings', 'puzzlepath_email_settings_page');
     if (class_exists('PuzzlePath_Stripe_Integration')) {
         $stripe_instance = PuzzlePath_Stripe_Integration::get_instance();
         add_submenu_page('puzzlepath-booking', 'Stripe Settings', 'Stripe Settings', 'manage_options', 'puzzlepath-stripe-settings', array($stripe_instance, 'stripe_settings_page_content'));
@@ -445,4 +446,127 @@ function puzzlepath_unified_settings_page() {
     </div>
     <?php
 }
+
+/**
+ * Email Settings functionality
+ */
+function puzzlepath_email_settings_init() {
+    // Register email settings
+    register_setting('puzzlepath_email_settings', 'puzzlepath_sender_email', 'sanitize_email');
+    register_setting('puzzlepath_email_settings', 'puzzlepath_sender_name', 'sanitize_text_field');
+    
+    // Add settings section
+    add_settings_section(
+        'puzzlepath_email_section',
+        'Email Configuration',
+        'puzzlepath_email_section_callback',
+        'puzzlepath-email-settings'
+    );
+    
+    // Add sender email field
+    add_settings_field(
+        'puzzlepath_sender_email',
+        'Sender Email Address',
+        'puzzlepath_sender_email_callback',
+        'puzzlepath-email-settings',
+        'puzzlepath_email_section'
+    );
+    
+    // Add sender name field
+    add_settings_field(
+        'puzzlepath_sender_name',
+        'Sender Name',
+        'puzzlepath_sender_name_callback',
+        'puzzlepath-email-settings',
+        'puzzlepath_email_section'
+    );
+}
+add_action('admin_init', 'puzzlepath_email_settings_init');
+
+function puzzlepath_email_section_callback() {
+    echo '<p>Configure the email address and name that will appear as the sender for all PuzzlePath booking confirmation emails.</p>';
+}
+
+function puzzlepath_sender_email_callback() {
+    $value = get_option('puzzlepath_sender_email', get_bloginfo('admin_email'));
+    echo '<input type="email" name="puzzlepath_sender_email" value="' . esc_attr($value) . '" class="regular-text" required />';
+    echo '<p class="description">The email address that booking confirmations will be sent from. Defaults to your WordPress admin email.</p>';
+}
+
+function puzzlepath_sender_name_callback() {
+    $value = get_option('puzzlepath_sender_name', 'PuzzlePath Team');
+    echo '<input type="text" name="puzzlepath_sender_name" value="' . esc_attr($value) . '" class="regular-text" />';
+    echo '<p class="description">The name that will appear as the sender of booking confirmation emails.</p>';
+}
+
+function puzzlepath_email_settings_page() {
+    ?>
+    <div class="wrap">
+        <h1>📧 Email Settings</h1>
+        <form method="post" action="options.php">
+            <?php settings_fields('puzzlepath_email_settings'); ?>
+            <?php do_settings_sections('puzzlepath-email-settings'); ?>
+            <?php submit_button(); ?>
+        </form>
+        
+        <div class="card">
+            <h2>📋 Email Template Preview</h2>
+            <p>All booking confirmation emails are sent using a beautifully designed HTML template that includes:</p>
+            <ul>
+                <li>✅ Professional branded header with PuzzlePath logo</li>
+                <li>🎯 Quest start button (for quest events)</li>
+                <li>📋 Complete booking details</li>
+                <li>🔒 Prominent booking code display</li>
+                <li>📱 Mobile-responsive design</li>
+            </ul>
+            <p><em>The sender email and name configured above will be used for all outgoing emails.</em></p>
+        </div>
+        
+        <div class="card">
+            <h2>🧪 Test Email Configuration</h2>
+            <p>To test your email settings:</p>
+            <ol>
+                <li>Save your settings above</li>
+                <li>Create a test booking using a 100% discount coupon</li>
+                <li>Check the From address in the confirmation email</li>
+            </ol>
+            <div class="notice notice-info">
+                <p><strong>Note:</strong> Email delivery depends on your WordPress site's email configuration. Consider using an SMTP plugin for better deliverability.</p>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .card {
+            background: #fff;
+            border: 1px solid #c3c4c7;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #1d2327;
+        }
+        .card ul li {
+            margin-bottom: 8px;
+        }
+    </style>
+    <?php
+}
+
+/**
+ * Helper function to get sender email
+ */
+function puzzlepath_get_sender_email() {
+    return get_option('puzzlepath_sender_email', get_bloginfo('admin_email'));
+}
+
+/**
+ * Helper function to get sender name
+ */
+function puzzlepath_get_sender_name() {
+    return get_option('puzzlepath_sender_name', 'PuzzlePath Team');
+}
+
 ?>

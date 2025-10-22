@@ -250,14 +250,17 @@ class PuzzlePath_Stripe_Integration {
             }
         }
         
+        // Set custom email filters before sending
+        add_filter('wp_mail_from', 'puzzlepath_get_sender_email');
+        add_filter('wp_mail_from_name', 'puzzlepath_get_sender_name');
+        
         // Get HTML email template (this function should be available from settings.php)
         if (function_exists('get_email_template')) {
             $message = get_email_template($booking, $booking_code, $event, $quest_link);
             
-            // Set headers for HTML email
+            // Set headers for HTML email (no longer need From header as it's handled by filters)
             $headers = array(
-                'Content-Type: text/html; charset=UTF-8',
-                'From: PuzzlePath Team <info@puzzlepath.com.au>'
+                'Content-Type: text/html; charset=UTF-8'
             );
             
             wp_mail($to, $subject, $message, $headers);
@@ -272,10 +275,15 @@ class PuzzlePath_Stripe_Integration {
                 $plain_quest_link = "\n\n🎯 START YOUR QUEST:\nReady to begin your {$hunt_name}?\nClick here: {$quest_link}?booking={$booking_code}\nUse your booking code: {$booking_code}\n";
             }
             
-            $message = "Dear {$booking->customer_name},\n\nThank you for your booking!\n\nBooking Details:\nEvent: {$event_title}\nDate: {$event_date}\nPrice: $".$booking->total_price."\nBooking Code: {$booking_code}{$plain_quest_link}\n\nRegards,\nPuzzlePath Team";
+            $sender_name = puzzlepath_get_sender_name();
+            $message = "Dear {$booking->customer_name},\n\nThank you for your booking!\n\nBooking Details:\nEvent: {$event_title}\nDate: {$event_date}\nPrice: $".$booking->total_price."\nBooking Code: {$booking_code}{$plain_quest_link}\n\nRegards,\n{$sender_name}";
             
             wp_mail($to, $subject, $message);
         }
+        
+        // Remove email filters to avoid affecting other emails
+        remove_filter('wp_mail_from', 'puzzlepath_get_sender_email');
+        remove_filter('wp_mail_from_name', 'puzzlepath_get_sender_name');
     }
 
     /**

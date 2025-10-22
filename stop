@@ -1,0 +1,91 @@
+.env.example
+Images/PuzzlePath Logo with url.png
+Images/Puzzlepath logo - transparent.png
+config.php
+database_schema.sql
+fixed and unzipped/puzzlepath-booking-2.8.0-slim/includes/admin.php
+fixed and unzipped/puzzlepath-booking-2.8.0-slim/includes/coupons.php
+fixed and unzipped/puzzlepath-booking-2.8.0-slim/includes/events.php
+fixed and unzipped/puzzlepath-booking-2.8.0-slim/includes/settings.php
+fixed and unzipped/puzzlepath-booking-2.8.0-slim/includes/stripe-integration.php
+fixed and unzipped/puzzlepath-booking-2.8.0-slim/puzzlepath-booking.php
+fixed and unzipped/puzzlepathapp-updated-slim/config.php
+fixed and unzipped/puzzlepathapp-updated-slim/get_clues.php
+fixed and unzipped/puzzlepathapp-updated-slim/setup_test.php
+fixed and unzipped/puzzlepathapp-updated-slim/track_quest.php
+fixed and unzipped/puzzlepathapp-updated-slim/verify_booking.php
+get_clues.php
+index.html
+index.php
+populate_clues.sql
+puzzlepath-logo-web.png
+register.html
+test_json.php
+track_quest.php
+unified-puzzle-path/Broadbeach Medal.png
+unified-puzzle-path/CHANGELOG.md
+unified-puzzle-path/DEPLOYMENT_CHECKLIST.md
+unified-puzzle-path/DEPLOYMENT_GUIDE.md
+unified-puzzle-path/DEPLOYMENT_INSTRUCTIONS.md
+unified-puzzle-path/EMAIL_TEMPLATE_FIX_DEPLOYMENT.md
+unified-puzzle-path/FILES_TO_UPLOAD.txt
+unified-puzzle-path/HOW_TO_ADD_NEW_HUNTS.md
+unified-puzzle-path/INTEGRATION_GUIDE.md
+unified-puzzle-path/LIVE_SITE_DEPLOYMENT.md
+unified-puzzle-path/README.md
+unified-puzzle-path/REST_API_INTEGRATION.md
+unified-puzzle-path/add_description_column.sql
+unified-puzzle-path/add_input_type_columns.sql
+unified-puzzle-path/admin_clues.php
+unified-puzzle-path/check_clue_setup.php
+unified-puzzle-path/check_database_setup.php
+unified-puzzle-path/check_events_table.php
+unified-puzzle-path/check_specific_booking.php
+unified-puzzle-path/check_table_structure.php
+unified-puzzle-path/config-live.php
+unified-puzzle-path/config-local.php
+unified-puzzle-path/config-secure-FINAL.php
+unified-puzzle-path/config-secure-UPDATED.php
+unified-puzzle-path/config-secure-live.php
+unified-puzzle-path/config-secure.php
+unified-puzzle-path/config-test.php
+unified-puzzle-path/dashboard.php
+unified-puzzle-path/debug_clue_inputs.php
+unified-puzzle-path/debug_quest_mapping.php
+unified-puzzle-path/deploy-to-live.bat
+unified-puzzle-path/deploy/Broadbeach Medal.png
+unified-puzzle-path/fix_booking_connection.php
+unified-puzzle-path/fix_input_detection.js
+unified-puzzle-path/get_clues.php
+unified-puzzle-path/get_clues_hardcoded.php
+unified-puzzle-path/get_clues_original.php
+unified-puzzle-path/get_clues_test.php
+unified-puzzle-path/index-test.html
+unified-puzzle-path/index.html
+unified-puzzle-path/index_fixed.html
+unified-puzzle-path/live_site_diagnostic.php
+unified-puzzle-path/local_schema.sql
+unified-puzzle-path/mark_booking_used.php
+unified-puzzle-path/plugin-updates/includes/events-updated.php
+unified-puzzle-path/plugin-updates/includes/settings.php
+unified-puzzle-path/plugin-updates/js/stripe-payment-updated.js
+unified-puzzle-path/plugin-updates/puzzlepath-booking-updated.php
+unified-puzzle-path/puzzlepathapp.zip
+unified-puzzle-path/register.php
+unified-puzzle-path/registration.log
+unified-puzzle-path/setup_clues_database.php
+unified-puzzle-path/simple_test.php
+unified-puzzle-path/submit_answer.php
+unified-puzzle-path/test-setup.bat
+unified-puzzle-path/test_api_connection.php
+unified-puzzle-path/test_booking_codes.php
+unified-puzzle-path/test_booking_debug.php
+unified-puzzle-path/test_booking_fix.php
+unified-puzzle-path/test_booking_simple.php
+unified-puzzle-path/test_database_booking.php
+unified-puzzle-path/test_upload.php
+unified-puzzle-path/update_clues_for_inputs.sql
+unified-puzzle-path/update_hunt_codes.sql
+unified-puzzle-path/update_input_types.sql
+unified-puzzle-path/verify_booking.php
+verify_booking.php
