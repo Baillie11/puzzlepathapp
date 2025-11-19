@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Unified Puzzle Path Configuration - SECURE VERSION
 // This file contains all database and application settings with enhanced security
 
@@ -30,7 +30,7 @@ if (empty(DB_NAME) || empty(DB_USER) || empty(DB_PASS)) {
 
 // Application Settings
 define('APP_NAME', 'Puzzle Path');
-define('APP_VERSION', '3.1.0');
+define('APP_VERSION', '3.0.0');
 define('DEFAULT_TIMEZONE', 'Australia/Brisbane');
 
 // Security Settings

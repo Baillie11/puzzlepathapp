@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1746,6 +1746,9 @@
             huntId: huntData.hunt_id,
             bookingCode: verifiedBookingData.booking_code
         });
+        
+        // Initialize geofencing
+        initializeGeofencing().catch(err => console.warn('Geofencing init failed:', err));
     }
 
     function startTimer() {
@@ -1960,6 +1963,68 @@
         return greetings[Math.floor(Math.random() * greetings.length)];
     }
 
+    // ============================================================================
+    // GEOFENCING INTEGRATION
+    // ============================================================================
+    
+    async function initializeGeofencing() {
+        if (!window.geoManager) {
+            console.log('Geofencing not available - continuing without it');
+            return;
+        }
+        
+        const hasCoordinates = cluesData.some(clue => 
+            clue.latitude !== null && clue.longitude !== null
+        );
+        
+        if (!hasCoordinates) {
+            console.log('No clues have coordinates - skipping geofencing');
+            return;
+        }
+        
+        try {
+            await window.geoManager.startQuest(huntData, cluesData);
+            
+            window.geoManager.setCallbacks({
+                onClueUnlocked: (clueId, geofence, result) => {
+                    const distance = Math.round(result.distance);
+                    showMessage('You are near the clue location! (' + distance + 'm away)', 'success');
+                },
+                onProximityUpdate: (proximities) => {
+                    updateDistanceDisplays(proximities);
+                }
+            });
+            
+            console.log('Geofencing initialized successfully');
+        } catch (error) {
+            console.warn('Geofencing initialization failed:', error);
+        }
+    }
+    
+    function updateDistanceDisplays(proximities) {
+        if (!proximities) return;
+        
+        cluesData.forEach((clue, index) => {
+            const distanceElement = document.getElementById('distance-' + index);
+            if (!distanceElement) return;
+            
+            const proximity = proximities.find(p => p.clueId === clue.id);
+            if (proximity && proximity.distance !== null) {
+                const distance = Math.round(proximity.distance);
+                distanceElement.textContent = '📍 ' + distance + 'm away';
+                distanceElement.style.display = 'inline-block';
+            }
+        });
+    }
+    
+    function navigateToClue(clueId) {
+        if (window.geoManager) {
+            window.geoManager.navigateToClue(clueId);
+        } else {
+            showMessage('Navigation not available', 'error');
+        }
+    }
+
     // Function to send quest events to server
     async function sendQuestEvent(action, data) {
         const eventData = {
@@ -1987,5 +2052,12 @@
         }
     }
 </script>
+<!-- Geofencing Services -->
+<script src="assets/js/geo/geolocation.js"></script>
+<script src="assets/js/geo/geofence.js"></script>
+<script src="assets/js/geo/notifications.js"></script>
+<script src="assets/js/geo/directions.js"></script>
+<script src="assets/js/geo/settings.js"></script>
+<script src="assets/js/geo/geo-manager.js"></script>
 </body>
 </html>

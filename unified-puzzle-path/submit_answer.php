@@ -338,11 +338,18 @@ function validateMultipleChoiceAnswer($answer, $clue) {
     $required_answer = trim($clue['required_answer']);
     $user_answer = trim($answer);
     
+    // Debug logging
+    error_log("Multiple Choice Validation - User Answer: '$user_answer' | Required: '$required_answer' | Case Sensitive: " . ($clue['is_case_sensitive'] ? 'YES' : 'NO'));
+    
     if ($clue['is_case_sensitive']) {
-        return $user_answer === $required_answer;
+        $result = $user_answer === $required_answer;
+        error_log("Case sensitive comparison result: " . ($result ? 'CORRECT' : 'INCORRECT'));
+        return $result;
     }
     
-    return strtolower($user_answer) === strtolower($required_answer);
+    $result = strtolower($user_answer) === strtolower($required_answer);
+    error_log("Case insensitive comparison result: " . ($result ? 'CORRECT' : 'INCORRECT'));
+    return $result;
 }
 
 // Helper function to handle photo uploads
