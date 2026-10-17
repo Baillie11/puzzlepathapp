@@ -1,594 +1,119 @@
 <?php
-session_start();
-require_once 'config.php';
-
-// Demo mode support - check for demo parameter
-$demoMode = isset($_GET['demo']) && $_GET['demo'] === 'true';
-$demoProfile = $_GET['profile'] ?? 'advanced'; // basic, intermediate, advanced
-
-$userData = null;
-$completionData = null;
-$questStats = null;
-$allCompletions = [];
-$userMedals = [];
-
-// Function to generate demo data based on profile
-function generateDemoData($profile) {
-    $profiles = [
-        'basic' => [
-            'user' => [
-                'id' => 1001,
-                'name' => 'Sarah Thompson',
-                'email' => 'sarah.thompson@email.com',
-                'joinDate' => '2024-09-15'
-            ],
-            'completions' => [
-                [
-                    'huntName' => 'Broadbeach Quest',
-                    'formattedTime' => '01:12:45',
-                    'completionDate' => '2024-10-08 14:30:00',
-                    'totalTime' => 4365000,
-                    'bookingCode' => 'BB-20241008-001',
-                    'difficulty' => 'Medium'
-                ]
-            ],
-            'stats' => [
-                'totalQuests' => 1,
-                'totalMedals' => 1,
-                'totalTimeSpent' => '1 hour 12 minutes',
-                'averageTime' => '01:12:45'
-            ],
-            'medals' => [
-                ['name' => 'Broadbeach Explorer', 'icon' => '🏅', 'earned' => '2024-10-08']
-            ]
-        ],
-        'intermediate' => [
-            'user' => [
-                'id' => 2002,
-                'name' => 'Marcus Chen',
-                'email' => 'marcus.chen@email.com',
-                'joinDate' => '2024-08-20'
-            ],
-            'completions' => [
-                [
-                    'huntName' => 'Broadbeach Quest',
-                    'formattedTime' => '00:45:23',
-                    'completionDate' => '2024-10-05 10:15:00',
-                    'totalTime' => 2723000,
-                    'bookingCode' => 'BB-20241005-012',
-                    'difficulty' => 'Medium'
-                ],
-                [
-                    'huntName' => 'Emerald Lakes Explorer',
-                    'formattedTime' => '01:03:17',
-                    'completionDate' => '2024-09-28 16:45:00',
-                    'totalTime' => 3797000,
-                    'bookingCode' => 'EP-20240928-025',
-                    'difficulty' => 'Easy'
-                ],
-                [
-                    'huntName' => 'Surfers Paradise Adventure',
-                    'formattedTime' => '00:52:08',
-                    'completionDate' => '2024-09-15 11:30:00',
-                    'totalTime' => 3128000,
-                    'bookingCode' => 'SP-20240915-008',
-                    'difficulty' => 'Hard'
-                ]
-            ],
-            'stats' => [
-                'totalQuests' => 3,
-                'totalMedals' => 4,
-                'totalTimeSpent' => '2 hours 40 minutes',
-                'averageTime' => '00:53:36'
-            ],
-            'medals' => [
-                ['name' => 'Broadbeach Explorer', 'icon' => '🏅', 'earned' => '2024-10-05'],
-                ['name' => 'Emerald Champion', 'icon' => '🌟', 'earned' => '2024-09-28'],
-                ['name' => 'Surfers Paradise Master', 'icon' => '🏆', 'earned' => '2024-09-15'],
-                ['name' => 'Speed Demon', 'icon' => '⚡', 'earned' => '2024-10-05']
-            ]
-        ],
-        'advanced' => [
-            'user' => [
-                'id' => 3003,
-                'name' => 'Isabella Rodriguez',
-                'email' => 'isabella.rodriguez@email.com',
-                'joinDate' => '2024-07-10'
-            ],
-            'completions' => [
-                [
-                    'huntName' => 'Coolangatta Coastal Quest',
-                    'formattedTime' => '00:38:45',
-                    'completionDate' => '2024-10-07 09:20:00',
-                    'totalTime' => 2325000,
-                    'bookingCode' => 'CQ-20241007-003',
-                    'difficulty' => 'Hard'
-                ],
-                [
-                    'huntName' => 'Broadbeach Quest',
-                    'formattedTime' => '00:32:12',
-                    'completionDate' => '2024-10-01 14:15:00',
-                    'totalTime' => 1932000,
-                    'bookingCode' => 'BB-20241001-017',
-                    'difficulty' => 'Medium'
-                ],
-                [
-                    'huntName' => 'Emerald Lakes Explorer',
-                    'formattedTime' => '00:47:33',
-                    'completionDate' => '2024-09-22 11:45:00',
-                    'totalTime' => 2853000,
-                    'bookingCode' => 'EP-20240922-011',
-                    'difficulty' => 'Easy'
-                ],
-                [
-                    'huntName' => 'Surfers Paradise Adventure',
-                    'formattedTime' => '00:41:29',
-                    'completionDate' => '2024-09-08 16:30:00',
-                    'totalTime' => 2489000,
-                    'bookingCode' => 'SP-20240908-021',
-                    'difficulty' => 'Hard'
-                ],
-                [
-                    'huntName' => 'Springbrook Nature Quest',
-                    'formattedTime' => '01:15:22',
-                    'completionDate' => '2024-08-25 10:00:00',
-                    'totalTime' => 4522000,
-                    'bookingCode' => 'SB-20240825-005',
-                    'difficulty' => 'Expert'
-                ]
-            ],
-            'stats' => [
-                'totalQuests' => 5,
-                'totalMedals' => 8,
-                'totalTimeSpent' => '3 hours 55 minutes',
-                'averageTime' => '00:47:04'
-            ],
-            'medals' => [
-                ['name' => 'Coolangatta Champion', 'icon' => '🌊', 'earned' => '2024-10-07'],
-                ['name' => 'Broadbeach Explorer', 'icon' => '🏅', 'earned' => '2024-10-01'],
-                ['name' => 'Emerald Champion', 'icon' => '🌟', 'earned' => '2024-09-22'],
-                ['name' => 'Surfers Paradise Master', 'icon' => '🏆', 'earned' => '2024-09-08'],
-                ['name' => 'Springbrook Adventurer', 'icon' => '🌿', 'earned' => '2024-08-25'],
-                ['name' => 'Speed Demon', 'icon' => '⚡', 'earned' => '2024-10-01'],
-                ['name' => 'Multi-Hunt Master', 'icon' => '🎯', 'earned' => '2024-09-08'],
-                ['name' => 'Gold Coast Legend', 'icon' => '👑', 'earned' => '2024-08-25']
-            ]
-        ]
-    ];
-    
-    return $profiles[$profile] ?? $profiles['basic'];
+// Personal results are only available through a completed booking session or a private expiring link.
+define('PUZZLE_PATH_ACCESS',true);
+require_once __DIR__.'/config-secure.php';
+require_once __DIR__.'/quest-progress.php';
+require_once __DIR__.'/dashboard-access.php';
+require_once __DIR__.'/repeat-hunter.php';
+header('Cache-Control: no-store, private, max-age=0');
+header('Pragma: no-cache');
+header('Referrer-Policy: no-referrer');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+ppDashboardSession();
+$dashboardCsrf=$_SESSION['pp_dashboard_csrf']??bin2hex(random_bytes(32));
+$_SESSION['pp_dashboard_csrf']=$dashboardCsrf;
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['logout'])) {
+    if (!is_string($_POST['csrf']??null) || !hash_equals($dashboardCsrf,$_POST['csrf'])) {http_response_code(403);exit('Please refresh the dashboard and try again.');}
+    $_SESSION=[];session_destroy();setcookie('PPDashboard','',['expires'=>time()-3600,'path'=>'/','secure'=>true,'httponly'=>true,'samesite'=>'Lax']);header('Location: dashboard.php',true,303);exit;
 }
-
-if ($demoMode) {
-    // Demo mode - use generated sample data
-    $demoData = generateDemoData($demoProfile);
-    $userData = $demoData['user'];
-    $allCompletions = $demoData['completions'];
-    $completionData = $allCompletions[0]; // Most recent
-    $questStats = $demoData['stats'];
-    $userMedals = $demoData['medals'];
-} else {
-    // Check for user session (would be set by register.php in production)
-    if (isset($_SESSION['user_id'])) {
-        // Production: fetch from database
-        $userData = [
-            'id' => $_SESSION['user_id'],
-            'name' => $_SESSION['user_name'] ?? 'Explorer',
-            'email' => $_SESSION['user_email'] ?? ''
-        ];
-    } else {
-        // Development: use basic simulated data
-        $userData = [
-            'id' => 9999,
-            'name' => 'Quest Explorer',
-            'email' => 'explorer@puzzlepath.com.au'
-        ];
-    }
-    
-    // Try to get completion data from various sources
-    if (isset($_GET['completion_data'])) {
-        $completionData = json_decode(base64_decode($_GET['completion_data']), true);
-    } elseif (isset($_SESSION['completion_data'])) {
-        $completionData = $_SESSION['completion_data'];
-        unset($_SESSION['completion_data']); // Clean up after use
-    }
-    
-    // Default completion data for development
-    if (!$completionData) {
-        $completionData = [
-            'huntName' => 'Broadbeach Quest',
-            'formattedTime' => '00:45:23',
-            'completionDate' => date('Y-m-d H:i:s'),
-            'totalTime' => 2723000, // milliseconds
-            'bookingCode' => 'BB-20241008-001'
-        ];
-    }
-    
-    // Calculate user statistics (in production, query database)
-    $questStats = [
-        'totalQuests' => 1,
-        'totalMedals' => 1,
-        'totalTimeSpent' => $completionData['formattedTime'],
-        'averageTime' => $completionData['formattedTime'],
-        'favoriteLocation' => $completionData['huntName'] ?? 'Broadbeach'
-    ];
-    
-    $userMedals = [
-        ['name' => $completionData['huntName'] . ' Explorer', 'icon' => '🏅', 'earned' => date('Y-m-d')]
-    ];
+function pdh($v){return htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');}
+function pdtime($ms){if($ms===null)return 'Not recorded';$s=(int)floor($ms/1000);return sprintf('%d:%02d:%02d',floor($s/3600),floor(($s%3600)/60),$s%60);}
+function pdbadgeurl($url){
+ $url=trim((string)$url);
+ static $displayUrls=[];
+ if($url!=='' && !array_key_exists($url,$displayUrls)){
+  $original=$url;
+  try{$stmt=puzzlepathProgressStatement(getMainDb(),'SELECT display_url FROM wp2s_pp_badge_assets WHERE source_hash=?','s',[hash('sha256',$original)]);$asset=$stmt->get_result()->fetch_assoc();$stmt->close();$displayUrls[$original]=$asset['display_url']??$original;}
+  catch(Throwable $e){$displayUrls[$original]=$original;}
+ }
+ $url=$displayUrls[$url]??$url;
+ if(strpos($url,'/')===0 && strpos($url,'//')!==0)$url='https://puzzlepath.com.au'.$url;
+ return filter_var($url,FILTER_VALIDATE_URL) && strtolower(parse_url($url,PHP_URL_SCHEME)??'')==='https'?$url:'';
 }
-
-// Function to get user's first name
-function getFirstName($fullName) {
-    $parts = explode(' ', trim($fullName));
-    return $parts[0] ?? 'Explorer';
+function pdsummary($description,$location){
+ $text=trim(preg_replace('/\s+/u',' ',html_entity_decode(strip_tags((string)$description),ENT_QUOTES,'UTF-8')));
+ if($text==='')$text=$location?'Follow the clues around '.$location.'. Your next little adventure awaits!':'New clues, new discoveries, and a badge with your name on it.';
+ if(function_exists('mb_strlen') && mb_strlen($text)>135)$text=rtrim(mb_substr($text,0,132)).'…';
+ elseif(!function_exists('mb_strlen') && strlen($text)>135)$text=rtrim(substr($text,0,132)).'…';
+ return $text;
 }
-
-// Function to format completion time nicely
-function formatCompletionTime($totalTimeMs) {
-    $totalSeconds = floor($totalTimeMs / 1000);
-    $hours = floor($totalSeconds / 3600);
-    $minutes = floor(($totalSeconds % 3600) / 60);
-    $seconds = $totalSeconds % 60;
-    
-    if ($hours > 0) {
-        return sprintf("%d hours, %d minutes", $hours, $minutes);
-    } elseif ($minutes > 0) {
-        return sprintf("%d minutes, %d seconds", $minutes, $seconds);
-    } else {
-        return sprintf("%d seconds", $seconds);
-    }
+function pdleaderboardRows($leaders,$booking,$rank){
+ $rows=[];$last=null;$place=0;$hasOwn=false;
+ foreach($leaders as $i=>$row){
+  if($last!==$row['duration_ms'])$place=$i+1;
+  $last=$row['duration_ms'];$own=(int)$row['id']===(int)$booking['id'];$hasOwn=$hasOwn||$own;
+  $rows[]=['rank'=>$place,'name'=>$own?$booking['customer_name'].' (you)':'Explorer '.$row['id'],'duration_ms'=>$row['duration_ms'],'own'=>$own,'note'=>''];
+ }
+ if(!$hasOwn)$rows[]=['rank'=>$rank,'name'=>$booking['customer_name'].' (you)','duration_ms'=>$booking['duration_ms'],'own'=>true,'note'=>(int)$booking['is_tester']?'Test run':($rank?'Your position':'Unranked completion')];
+ return $rows;
 }
+function pdbookurl($questId,$offer){
+ $url='https://puzzlepath.com.au/book-today/?event_id='.(int)$questId;
+ if(!empty($offer['active']))$url.='&repeat_hunter='.rawurlencode($offer['coupon_code']);
+ return $url;
+}
+function pdpricehtml($price,$offer){
+ $regular=(int)round((float)$price*100);$active=!empty($offer['active']);$pay=$active?(int)round($regular*0.75):$regular;
+ $html='<div class="quest-price">';
+ if($active)$html.='<small>Regular <s>$'.number_format($regular/100,2).'</s></small>';
+ $html.='<strong>'.($active?'You pay ':'').'$'.number_format($pay/100,2).' AUD</strong><small>per quest · up to 5 people</small>';
+ if($active)$html.='<span>Save $'.number_format(($regular-$pay)/100,2).' with 25% off!</span>';
+ return $html.'</div>';
+}
+function pddate($v){return $v?(new DateTimeImmutable($v,new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Australia/Brisbane'))->format('j M Y, g:i a').' AEST':'Not recorded';}
+$error='';$booking=null;$leaders=[];$quests=[];$rank=null;$mailStatus='pending';$repeatOffer=null;
+try{
+ $db=getMainDb();ppDashboardInstall($db);
+ if($_SERVER['REQUEST_METHOD']==='POST'){
+  header('Content-Type: application/json');
+  $input=json_decode(file_get_contents('php://input'),true);
+  $id=ppDashboardTokenBooking($db,$input['access_token']??null);
+  if(!$id){http_response_code(403);echo json_encode(['success'=>false,'message'=>'This private link is invalid or has expired. Please contact Puzzle Path for help.']);exit;}
+  ppDashboardGrant($id);echo json_encode(['success'=>true]);exit;
+ }
+ $id=(int)($_SESSION['pp_dashboard_booking']??0);
+ if(($_SESSION['pp_dashboard_expires']??0)<time())$id=0;
+ if($id){
+  $stmt=puzzlepathProgressStatement($db,"SELECT b.id,b.booking_code,b.customer_name,b.customer_email,b.event_id,b.is_tester,e.title,e.medal_image_url,e.quest_description,e.location,p.quest_status,p.started_at,p.completed_at,p.duration_ms,p.source FROM wp2s_pp_bookings b JOIN wp2s_pp_events e ON e.id=b.event_id JOIN wp2s_pp_booking_progress p ON p.booking_id=b.id WHERE b.id=? AND b.payment_status='paid' AND p.quest_status='completed'",'i',[$id]);$booking=$stmt->get_result()->fetch_assoc();$stmt->close();
+ }
+ if($booking){
+  try{$repeatOffer=ppRepeatHunterOffer($db,$booking);}catch(Throwable $offerError){error_log('PuzzlePath Repeat Hunter offer could not load.');}
+  $stmt=puzzlepathProgressStatement($db,"SELECT COUNT(*) AS total FROM wp2s_pp_clues WHERE hunt_id=? AND is_active=1",'i',[(int)$booking['event_id']]);$clueCount=(int)$stmt->get_result()->fetch_assoc()['total'];$stmt->close();
+  $base=" FROM wp2s_pp_bookings b JOIN wp2s_pp_booking_progress p ON p.booking_id=b.id WHERE b.event_id=? AND b.payment_status='paid' AND COALESCE(b.is_tester,0)=0 AND p.quest_status='completed' AND p.source='app' AND p.duration_ms>0";
+  $stmt=puzzlepathProgressStatement($db,'SELECT b.id,p.duration_ms,p.completed_at'.$base.' ORDER BY p.duration_ms,p.completed_at,b.id LIMIT 10','i',[(int)$booking['event_id']]);$result=$stmt->get_result();while($r=$result->fetch_assoc())$leaders[]=$r;$stmt->close();
+  if(!(int)$booking['is_tester'] && $booking['source']==='app' && (int)$booking['duration_ms']>0){$stmt=puzzlepathProgressStatement($db,'SELECT COUNT(*) AS faster'.$base.' AND p.duration_ms<?','ii',[(int)$booking['event_id'],(int)$booking['duration_ms']]);$rank=1+(int)$stmt->get_result()->fetch_assoc()['faster'];$stmt->close();}
+  $stmt=puzzlepathProgressStatement($db,'SELECT id,title,location,price,quest_description,medal_image_url FROM wp2s_pp_events WHERE display_on_site=1 AND seats>0 AND id<>? ORDER BY title','i',[(int)$booking['event_id']]);$result=$stmt->get_result();while($r=$result->fetch_assoc())$quests[]=$r;$stmt->close();
+  $stmt=puzzlepathProgressStatement($db,'SELECT status FROM wp2s_pp_completion_emails WHERE booking_id=?','i',[$id]);$mailStatus=$stmt->get_result()->fetch_assoc()['status']??'pending';$stmt->close();
+ }
+}catch(Throwable $e){error_log('PuzzlePath dashboard could not load.');$error='Your results are safely recorded. The dashboard is temporarily unavailable; please refresh in a moment.';http_response_code(503);}
+if(!empty($leaderboardPage) && $booking && !$error){
+ try{require __DIR__.'/leaderboard-data.php';}catch(Throwable $e){error_log('PuzzlePath leaderboards could not load.');$error='The leaderboards are taking a breather. Please refresh in a moment.';http_response_code(503);}
+}
+session_write_close();
+?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?=!empty($leaderboardPage)?'Quest Leaderboards':'Your Quest Dashboard'?> | Puzzle Path</title>
+<?php if($booking && !$error && pdbadgeurl($booking['medal_image_url'])):?><link rel="preload" as="image" href="<?=pdh(pdbadgeurl($booking['medal_image_url']))?>" fetchpriority="high"><?php endif;?>
+<style>
 
-$firstName = getFirstName($userData['name']);
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Dashboard - Puzzle Path</title>
-    <link rel="icon" type="image/png" href="puzzlepath-logo-web.png">
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            background: #f4f8fb;
-            color: #333;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            padding: 2em;
-        }
-        .header {
-            background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
-            color: white;
-            text-align: center;
-            padding: 2em;
-            border-radius: 15px;
-            margin-bottom: 2em;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 2.5em;
-        }
-        .dashboard-section {
-            background: white;
-            padding: 2em;
-            border-radius: 15px;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.1);
-            margin-bottom: 2em;
-        }
-        .achievement-card {
-            background: linear-gradient(145deg, #fff3cd 0%, #ffeaa7 100%);
-            border: 2px solid #ffc107;
-            border-radius: 15px;
-            padding: 2em;
-            text-align: center;
-            margin: 1em 0;
-        }
-        .medal-icon {
-            font-size: 4em;
-            margin-bottom: 0.5em;
-        }
-        .button {
-            background: #4ca6a8;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 8px;
-            display: inline-block;
-            margin: 0.5em;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background: #3a8a8c;
-        }
-        .button.primary {
-            background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5em;
-            margin: 2em 0;
-        }
-        .stat-card {
-            background: #f8f9fa;
-            padding: 1.5em;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid #e9ecef;
-        }
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #fc5c7d;
-        }
-        .welcome-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 1.5em;
-            border-radius: 10px;
-            margin-bottom: 2em;
-            text-align: center;
-            border: 1px solid #c3e6cb;
-        }
-        .completion-details {
-            background: #e8f4ff;
-            border: 2px solid #0066cc;
-            border-radius: 10px;
-            padding: 1.5em;
-            margin: 1em 0;
-            text-align: center;
-        }
-        .time-badge {
-            background: #28a745;
-            color: white;
-            padding: 0.5em 1em;
-            border-radius: 20px;
-            font-weight: bold;
-            display: inline-block;
-            margin: 0.5em;
-        }
-        .demo-banner {
-            background: linear-gradient(45deg, #ff6b6b, #feca57);
-            color: white;
-            text-align: center;
-            padding: 1em;
-            margin-bottom: 1em;
-            border-radius: 10px;
-            font-weight: bold;
-            position: relative;
-            overflow: hidden;
-        }
-        .demo-banner::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            animation: shimmer 2s infinite;
-        }
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        .medal-collection {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1em;
-            margin: 1.5em 0;
-        }
-        .medal-item {
-            background: #fff;
-            border: 2px solid #ffd700;
-            border-radius: 10px;
-            padding: 1em;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        .medal-item:hover {
-            transform: scale(1.05);
-        }
-        .medal-icon-small {
-            font-size: 2em;
-            margin-bottom: 0.5em;
-        }
-        .quest-history {
-            margin: 1.5em 0;
-        }
-        .quest-item {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 1em;
-            margin: 0.5em 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .difficulty-badge {
-            padding: 0.2em 0.6em;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        .difficulty-easy { background: #d4edda; color: #155724; }
-        .difficulty-medium { background: #fff3cd; color: #856404; }
-        .difficulty-hard { background: #f8d7da; color: #721c24; }
-        .difficulty-expert { background: #d1ecf1; color: #0c5460; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <?php if ($demoMode): ?>
-        <div class="demo-banner">
-            🎯 DEMO MODE - Viewing sample data for <?php echo ucfirst($demoProfile); ?> User Profile
-            <br><small>Try: <a href="?demo=true&profile=basic" style="color: white;">Basic</a> | 
-            <a href="?demo=true&profile=intermediate" style="color: white;">Intermediate</a> | 
-            <a href="?demo=true&profile=advanced" style="color: white;">Advanced</a> | 
-            <a href="dashboard.php" style="color: white;">Exit Demo</a></small>
-        </div>
-        <?php endif; ?>
-        
-        <div class="header">
-            <h1>🎉 Welcome to Your Dashboard, <?php echo h($firstName); ?>!</h1>
-            <p><?php echo $demoMode ? 'Explore what your dashboard could look like!' : 'Congratulations on completing your Puzzle Path quest!'; ?></p>
-        </div>
-        
-        <div class="welcome-message">
-            <h3>Registration Successful!</h3>
-            <p>Your achievement has been recorded and you're now part of the Puzzle Path community!</p>
-        </div>
-        
-        <div class="completion-details">
-            <h3>🏁 Quest Completed: <?php echo h($completionData['huntName']); ?>!</h3>
-            <p><strong>Completion Time:</strong> <span class="time-badge"><?php echo h($completionData['formattedTime']); ?></span></p>
-            <p><strong>Completed On:</strong> <?php echo date('F j, Y \a\t g:i A', strtotime($completionData['completionDate'])); ?></p>
-            <?php if (isset($completionData['bookingCode'])): ?>
-            <p><small>Booking Code: <?php echo h($completionData['bookingCode']); ?></small></p>
-            <?php endif; ?>
-        </div>
-        
-        <div class="dashboard-section">
-            <h2>Your Latest Achievement</h2>
-            <div class="achievement-card">
-                <div class="medal-icon">🏆</div>
-                <h3><?php echo h($completionData['huntName']); ?> Completed!</h3>
-                <p>You've successfully completed the <?php echo h($completionData['huntName']); ?> in <?php echo formatCompletionTime($completionData['totalTime']); ?>. Well done!</p>
-                <?php if (isset($completionData['difficulty'])): ?>
-                <p><span class="difficulty-badge difficulty-<?php echo strtolower($completionData['difficulty']); ?>"><?php echo h($completionData['difficulty']); ?></span></p>
-                <?php endif; ?>
-            </div>
-        </div>
-        
-        <?php if ($demoMode && count($userMedals) > 1): ?>
-        <div class="dashboard-section">
-            <h2>Your Medal Collection</h2>
-            <div class="medal-collection">
-                <?php foreach ($userMedals as $medal): ?>
-                <div class="medal-item">
-                    <div class="medal-icon-small"><?php echo $medal['icon']; ?></div>
-                    <h4><?php echo h($medal['name']); ?></h4>
-                    <small>Earned: <?php echo date('M j, Y', strtotime($medal['earned'])); ?></small>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <div class="dashboard-section">
-            <h2>Your Stats</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number"><?php echo $questStats['totalQuests']; ?></div>
-                    <div>Quests Completed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number"><?php echo $questStats['totalMedals']; ?></div>
-                    <div>Medals Earned</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number"><?php echo h($questStats['averageTime']); ?></div>
-                    <div>Average Time</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">⏱️</div>
-                    <div>Total: <?php echo h($questStats['totalTimeSpent']); ?></div>
-                </div>
-            </div>
-        </div>
-        
-        <?php if ($demoMode && count($allCompletions) > 1): ?>
-        <div class="dashboard-section">
-            <h2>Quest History</h2>
-            <div class="quest-history">
-                <?php foreach ($allCompletions as $index => $completion): ?>
-                <div class="quest-item">
-                    <div>
-                        <strong><?php echo h($completion['huntName']); ?></strong>
-                        <br><small><?php echo date('M j, Y g:i A', strtotime($completion['completionDate'])); ?></small>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="time-badge" style="background: #17a2b8;"><?php echo h($completion['formattedTime']); ?></div>
-                        <br><span class="difficulty-badge difficulty-<?php echo strtolower($completion['difficulty']); ?>"><?php echo h($completion['difficulty']); ?></span>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <div class="dashboard-section">
-            <h2>What's Next?</h2>
-            <p>Ready for another adventure? Explore more quests and challenges!</p>
-            <div style="text-align: center;">
-                <a href="index.html" class="button primary">Start New Quest</a>
-                <a href="https://puzzlepath.com.au" class="button" target="_blank">Visit Puzzle Path Website</a>
-            </div>
-        </div>
-        
-        <div class="dashboard-section" style="background: #fff3cd; border: 1px solid #ffc107;">
-            <h2>🚀 What's Coming Next</h2>
-            <p>Your dashboard will soon include:</p>
-            <ul>
-                <li>📊 <strong>Complete Quest History</strong> - View all your past adventures</li>
-                <li>🏆 <strong>Medal Collection</strong> - Display all earned achievements</li>
-                <li>📈 <strong>Leaderboards</strong> - Compare your times with other explorers</li>
-                <li>📱 <strong>Social Sharing</strong> - Share your achievements on social media</li>
-                <li>🎯 <strong>Booking Integration</strong> - Book new adventures directly from your dashboard</li>
-            </ul>
-        </div>
-    </div>
-    
-    <script>
-        // Enhanced dashboard functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check for completion data in sessionStorage (from registration flow)
-            const completionData = JSON.parse(sessionStorage.getItem('questCompletion') || '{}');
-            
-            if (completionData.totalTime) {
-                console.log('✅ Quest completion data found:', completionData);
-                console.log(`🎯 Quest: ${completionData.huntName}`);
-                console.log(`⏱️ Time: ${completionData.formattedTime}`);
-                console.log(`📅 Date: ${completionData.completionDate}`);
-            }
-            
-            // Clean up stored data (user has seen their achievement)
-            sessionStorage.removeItem('questCompletion');
-            
-            // Add some visual flair
-            setTimeout(() => {
-                const achievements = document.querySelectorAll('.achievement-card, .stat-card');
-                achievements.forEach((el, index) => {
-                    setTimeout(() => {
-                        el.style.transform = 'scale(1.05)';
-                        setTimeout(() => {
-                            el.style.transform = 'scale(1)';
-                        }, 200);
-                    }, index * 100);
-                });
-            }, 500);
-            
-            // Success message for the user
-            console.log('🎉 Welcome to your Puzzle Path dashboard!');
-        });
-        
-        // Add smooth transitions
-        const style = document.createElement('style');
-        style.textContent = `
-            .achievement-card, .stat-card {
-                transition: transform 0.3s ease;
-            }
-            .achievement-card:hover, .stat-card:hover {
-                transform: translateY(-5px);
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-</body>
-</html>
+:root{color-scheme:light;--ink:#25315e;--teal:#08796e;--muted:#586078;--purple:#6745bd;--yellow:#ffe374;--pink:#ffddd9}*{box-sizing:border-box}body{margin:0;color:var(--ink);font:16px/1.6 "Trebuchet MS",system-ui,sans-serif;background-color:#fffaf0;background-image:radial-gradient(#f4c6d5 1.5px,transparent 1.5px),radial-gradient(#c8dfd3 1.5px,transparent 1.5px);background-position:0 0,18px 18px;background-size:36px 36px}header,main,footer{max-width:1160px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{font-weight:900;letter-spacing:.05em;color:var(--teal);text-decoration:none;font-size:1.15rem}nav{display:flex;align-items:center;flex-wrap:wrap;gap:12px}nav a{color:var(--ink);font-weight:700}nav form{margin:0!important}.hero{position:relative;padding:36px;border:2px solid var(--ink);border-radius:30px;background:var(--yellow);box-shadow:6px 7px 0 #25315e;margin-bottom:28px;display:grid;grid-template-columns:1fr 210px;gap:28px;align-items:center;overflow:hidden}.hero h1{font-size:clamp(2.1rem,5vw,3.8rem);line-height:1.08;margin:14px 0;letter-spacing:-.04em}.hero p{margin-bottom:0}.eyebrow{font-size:.85rem;text-transform:uppercase;letter-spacing:.12em;font-weight:900}.hero-sparkles{position:absolute;top:14px;right:24px;color:var(--purple);font-size:1.7rem;letter-spacing:12px}.hero .badge-slot{width:144px;height:216px;padding:10px;margin:auto;background:#fff8d6;border:2px solid #e1b633;transform:rotate(3deg);box-shadow:0 6px 0 #dcae32}.hero .badge-slot img{width:100%;height:100%;max-width:none;max-height:none;border-radius:7px}.badge{display:inline-block;background:white;color:var(--ink);border:1px solid var(--ink);border-radius:30px;padding:4px 14px;font-size:.85rem;font-weight:800}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:28px}.card,section{background:white;border:1.5px solid #ccd0e0;border-radius:24px;padding:26px}.stats .card{border:1.5px solid var(--ink);box-shadow:3px 4px 0 #25315e}.stats .card:nth-child(1){background:#ddf3e5}.stats .card:nth-child(2){background:#ece1ff}.stats .card:nth-child(3){background:#ffe0d7}.stat{font-size:1.9rem;font-weight:900;display:block}.muted,small{color:var(--muted)}section{margin:28px 0}h2{font-size:1.65rem;line-height:1.2;margin:0 0 12px;letter-spacing:-.03em}h3{line-height:1.3}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:14px 8px;border-bottom:1px solid #e5e3ee}th{font-size:.8rem;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.badge-section{background:#f1ebff;border:2px solid #b4a0dc}.section-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:22px}.section-top p{margin:8px 0}.collection-count{white-space:nowrap;font-size:.85rem;font-weight:800;background:white;padding:8px 14px;border:1px solid #b4a0dc;border-radius:20px}.quest{display:flex;align-items:center;flex-direction:column;text-align:center;position:relative;padding:24px 20px;border:1.5px solid #c7b9e6;box-shadow:0 4px 0 #d5caeb;background:#fff}.quest:nth-child(3n+2){background:#fffdf1}.quest:nth-child(3n){background:#f3fbf7}.quest h3{margin:18px 0 10px;font-size:1.13rem}.quest .description{margin:0 0 18px;flex:1;font-size:.94rem}.badge-slot{width:128px;height:192px;padding:9px;border:3px dashed #b7a7d7;background:#f4f0fb;border-radius:16px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}.badge-slot:before{content:"";position:absolute;inset:6px;border:1.5px dashed #d0c4e6;border-radius:10px}.badge-outline{width:70px;height:105px;fill:none;stroke:#a797c8;stroke-width:2;stroke-linejoin:round}.badge-slot img{display:block;width:100%;height:100%;object-fit:contain;border-radius:6px;position:relative;z-index:1}.earned{background:#fff8d4!important;border:2px solid #c69a25;box-shadow:0 5px 0 #e4c15a}.earned .badge-slot{background:#fff2a8;border:2px solid #d3ac38;box-shadow:0 0 0 7px #fffbe5}.earned .badge-slot:before{border-style:solid;border-color:#ead28d}.earned-label{background:#097b6d;color:white;font-size:.77rem;font-weight:800;letter-spacing:.04em;border-radius:20px;padding:4px 12px;margin-bottom:18px}.badge-placeholder{font-size:3rem;color:#9168cd}.earned-caption{font-weight:800;color:#126553;margin:0}.slot-hint{font-size:.78rem;color:#72618e;display:block;margin-top:12px}.button{display:inline-block;border:1.5px solid var(--ink);border-radius:14px;background:var(--purple);color:white;text-decoration:none;padding:12px 18px;font:800 .95rem/1.3 "Trebuchet MS",system-ui,sans-serif;box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:transform .15s,box-shadow .15s}.button:hover{transform:translate(-1px,-2px);box-shadow:4px 5px 0 var(--ink)}.button:active{transform:translate(2px,2px);box-shadow:none}.button:focus-visible,a:focus-visible{outline:3px solid #047d77;outline-offset:5px}.quest .button{width:100%;margin-top:auto}.quest:nth-child(3n+2) .button{background:#086f66}.quest:nth-child(3n) .button{background:#b34365}.book-hint{font-size:.76rem;margin-top:9px;color:var(--muted)}.notice{padding:14px;background:#edf8f1;border-radius:14px}.details{display:flex;flex-wrap:wrap;gap:12px 28px}.access{max-width:640px;margin:30px auto}footer{font-size:.85rem}.error{color:#8b2626}.results-title{color:#6543ad}.leader-title{color:#08776c}@media(max-width:760px){header,main,footer{padding:16px}header{align-items:flex-start}.brand{font-size:1rem}nav{justify-content:flex-end;font-size:.85rem}.hero{padding:26px;grid-template-columns:1fr 135px;gap:14px}.hero .badge-slot{width:112px;height:168px;padding:8px}.hero .badge-slot img{width:100%;height:100%}.hero-sparkles{font-size:1.1rem;top:5px;right:5px}.stats{gap:12px}.stats .card{padding:16px}.stat{font-size:1.5rem}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}section{padding:22px}.quest{padding:22px 15px}.badge-slot{width:112px;height:168px;padding:8px}.badge-slot img{width:100%;height:100%}.section-top{flex-direction:column;gap:0}.quest .button{font-size:.85rem;padding:12px 8px}}@media(max-width:480px){.hero{grid-template-columns:1fr;text-align:center}.hero .badge-slot{margin:6px auto}.stats{grid-template-columns:1fr}.stats .card{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.stats small{width:100%}.grid{grid-template-columns:1fr}.quest{max-width:360px;width:100%;margin:auto}.hero h1{font-size:2.5rem}td,th{padding:12px 5px}.collection-count{font-size:.8rem}}@media(prefers-reduced-motion:reduce){.button{transition:none}}
+.repeat-offer{background:#ffe5b4;border:2px dashed #6745bd;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center}.repeat-offer p{margin:10px 0}.offer-stamp{display:flex;align-items:center;justify-content:center;width:140px;height:140px;border-radius:24px;background:#6745bd;color:white;border:2px solid #25315e;box-shadow:4px 4px 0 #25315e;font-size:2rem;font-weight:900;transform:rotate(-5deg)}@media(max-width:600px){.repeat-offer{grid-template-columns:1fr}.offer-stamp{width:110px;height:80px;font-size:1.5rem}}
+.position-link{color:inherit;text-decoration:none;display:block}.position-link:hover{outline:3px solid #6745bd}.leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.leader-board{margin:0;background:#ece1ff;border:2px solid var(--ink);box-shadow:4px 5px 0 var(--ink);min-width:0}.leader-board:nth-child(3n+2){background:#ddf3e5}.leader-board:nth-child(3n){background:#ffe0d7}.leader-board.featured{grid-column:1/-1;background:#fff0a6;padding:36px}.leader-board .own{background:white;font-weight:800}.leader-board .button{margin-top:16px}.leader-board table{font-size:.9rem}.leader-board .discount-copy{font-weight:800;color:#6543ad}.leader-intro{background:#ffddd9}.leader-intro h1{font-size:clamp(2rem,5vw,3.4rem)}.leader-board.featured h2{font-size:2rem}.leader-board small{display:block}.leader-board:target{scroll-margin-top:20px}@media(max-width:760px){.leader-grid{grid-template-columns:1fr}.leader-board.featured{padding:24px}.leader-board td{overflow-wrap:anywhere}}
+.quest-price{width:100%;padding:14px;margin:0 0 18px;border:2px solid #08796e;border-radius:16px;background:#ddf3e5;color:#25315e}.quest-price strong{display:block;color:#086f66;font-size:1.65rem;line-height:1.3}.quest-price small{display:block}.quest-price span{display:block;margin-top:6px;font-size:.85rem;font-weight:800;color:#6745bd}.leader-board .quest-price{max-width:380px;margin-top:18px}</style></head><body><header><a class="brand" href="https://puzzlepath.com.au/">PUZZLE PATH</a><nav><?php if($booking):?><form method="post" action="dashboard.php" style="display:inline-block;margin-left:16px"><input type="hidden" name="logout" value="1"><input type="hidden" name="csrf" value="<?=pdh($dashboardCsrf)?>"><button type="submit" class="button">Sign out</button></form><?php endif;?></nav></header><main>
+<?php if($error):?><section class="access"><h1>We’ll be right back</h1><p class="error"><?=pdh($error)?></p><button class="button" onclick="location.reload()">Refresh dashboard</button></section>
+<?php elseif(!$booking):?><section class="access"><span class="badge">Your personal dashboard</span><h1>Your adventure, all in one place.</h1><p id="accessMessage" role="status">Open the private dashboard link from your quest completion email. If you have just completed a quest, return to the app and retry saving your completion.</p><p><a class="button" href="index.html">Return to quest app</a></p><small>Links expire after 30 days. Need help? Contact Puzzle Path through our website.</small></section>
+<?php elseif(!empty($leaderboardPage)):require __DIR__.'/leaderboard-view.php';else:?>
+<div class="hero"><span class="hero-sparkles" aria-hidden="true">✦ ✧ ★</span><div><span class="eyebrow">Adventure looks good on you</span><h1>High five, <?=pdh(explode(' ',trim($booking['customer_name']))[0])?>!</h1><p><strong><?=pdh($booking['title'])?></strong> — conquered!</p><p>Clues cracked. Memories made. Time to celebrate your shiny new badge.</p><p><span class="badge">✓ Quest complete!</span></p></div><div class="badge-slot"><?php if(pdbadgeurl($booking['medal_image_url'])):?><img src="<?=pdh(pdbadgeurl($booking['medal_image_url']))?>" alt="<?=pdh($booking['title'])?> earned badge" width="384" height="576" decoding="async" fetchpriority="high" loading="eager"><?php else:?><span class="badge-placeholder" aria-label="Quest completed">★</span><?php endif;?></div></div>
+<div class="stats"><div class="card"><span class="muted">Your completion time</span><strong class="stat"><?=pdh(pdtime($booking['duration_ms']))?></strong></div><div class="card"><span class="muted">Quest progress</span><strong class="stat">100%</strong><small><?=pdh($clueCount)?> clues in this quest</small></div><a class="card position-link" target="_blank" rel="noopener noreferrer" onclick="const w=window.open(this.href,'PuzzlePathLeaderboards','popup,width=1100,height=850');if(w){w.opener=null;return false;}" href="leaderboards.php#featured"><span class="muted">Your leaderboard position</span><strong class="stat"><?= $rank?'#'.pdh($rank):'Unranked'?></strong><small><?= $rank?'For this quest':((int)$booking['is_tester']?'Test run · view leaderboards ↗':'View your result &amp; all leaderboards ↗')?></small></a></div>
+
+<?php if(!empty($repeatOffer['active'])):?><section class="repeat-offer" aria-labelledby="repeat-offer-title"><span class="offer-stamp">25% OFF</span><div><span class="eyebrow">Your Repeat Hunter Discount</span><h2 id="repeat-offer-title">Your next badge? 25% sweeter.</h2><p>Pick your next adventure from the badge collection below and we’ll automatically take <strong>25% off</strong> at checkout. No code to remember!</p><p><strong>Book by <?=pdh(pddate($repeatOffer['expires_at']))?>.</strong> Use the same booking email as your completed quest.</p><small>Your 30-day offer starts with your first dashboard login. Reopening the dashboard doesn’t restart it.</small></div></section><?php endif;?>
+<section class="badge-section" aria-labelledby="badge-collection-title"><div class="section-top"><div><span class="eyebrow">A little collection of big adventures</span><h2 id="badge-collection-title">Your badge collection</h2><p class="muted">One down. Where will your curiosity take you next? Every empty spot is an adventure waiting to happen.</p></div><span class="collection-count">1 badge earned ✨</span></div><div class="grid">
+<article class="card quest earned"><span class="earned-label">YOU EARNED THIS! ✦</span><div class="badge-slot"><?php if(pdbadgeurl($booking['medal_image_url'])):?><img src="<?=pdh(pdbadgeurl($booking['medal_image_url']))?>" alt="<?=pdh($booking['title'])?> badge" width="384" height="576" decoding="async" loading="lazy"><?php else:?><span class="badge-placeholder" aria-hidden="true">★</span><?php endif;?></div><h3><?=pdh($booking['title'])?></h3><p class="description"><?=pdh(pdsummary($booking['quest_description'],$booking['location']))?></p><p class="earned-caption">Badge unlocked. Nicely done!</p><small>Finished in <?=pdh(pdtime($booking['duration_ms']))?></small><?php if(!pdbadgeurl($booking['medal_image_url'])):?><small>Badge artwork is on its way.</small><?php endif;?></article>
+<?php $badgeButtons=['Let’s chase this badge!','Take me exploring!','Challenge accepted!','Next badge, here I come!'];foreach($quests as $q):?><article class="card quest"><div class="badge-slot" role="img" aria-label="<?=pdh($q['title'])?> badge not yet earned"><svg class="badge-outline" viewBox="0 0 80 120" aria-hidden="true"><rect x="6" y="6" width="68" height="108" rx="6"/><path d="M40 41 46 54 60 56 50 66 52 80 40 73 28 80 30 66 20 56 34 54Z"/></svg></div><span class="slot-hint">Your next badge could live here</span><h3><?=pdh($q['title'])?></h3><p class="description"><?=pdh(pdsummary($q['quest_description'],$q['location']))?></p><?=pdpricehtml($q['price'],$repeatOffer)?><a class="button" aria-label="<?=pdh($q['title'])?> — book this quest" target="_blank" rel="noopener noreferrer" href="<?=pdh(pdbookurl($q['id'],$repeatOffer))?>"><?=pdh($badgeButtons[(int)$q['id']%count($badgeButtons)])?> <span aria-hidden="true">↗</span></a><small class="book-hint"><?=!empty($repeatOffer['active'])?'25% Repeat Hunter saving applied at checkout':'Explore the quest &amp; book your adventure'?></small></article><?php endforeach;?></div></section>
+<section><h2 class="results-title">The adventure recap</h2><p class="muted"><?=pdh($booking['title'])?></p><div class="details"><p><strong>Started</strong><br><?=pdh(pddate($booking['started_at']))?></p><p><strong>Completed</strong><br><?=pdh(pddate($booking['completed_at']))?></p><p><strong>Booking</strong><br><?=pdh($booking['booking_code'])?></p></div><p class="notice"><?= $mailStatus==='sent'?'Your congratulations email has been accepted for sending. It includes a private link back to this dashboard.':($mailStatus==='failed'?'Your completion is saved. We are retrying your congratulations email.':'Your completion is saved. Your congratulations email is being processed.')?></p></section>
+
+
+<?php endif;?></main><footer>Private results for your completed booking. Keep your email access link to yourself. &copy; <?=date('Y')?> Puzzle Path</footer>
+<script>
+(async()=>{const params=new URLSearchParams(location.hash.slice(1));const token=params.get('access');if(!token)return;history.replaceState(null,'','dashboard.php');const message=document.getElementById('accessMessage');if(message)message.textContent='Opening your private dashboard…';try{const response=await fetch('dashboard.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({access_token:token})});const data=await response.json();if(!response.ok||!data.success)throw Error(data.message||'Unable to open your dashboard.');location.replace('dashboard.php');}catch(error){if(message)message.textContent=error.message+' Reopen your original email link to try again.';}})();
+</script></body></html>

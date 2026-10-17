@@ -160,7 +160,8 @@ try {
     }
     
     $huntStmt = $mainDb->prepare("
-        SELECT id, title, location, hunt_code, hunt_name, description 
+        SELECT id, title, location, hunt_code, hunt_name, description,
+               start_location_name, start_location_address, start_location_instructions
         FROM wp2s_pp_events
         WHERE hunt_code = ? AND (created_at IS NULL OR created_at <= NOW())
         LIMIT 1
@@ -209,6 +210,9 @@ try {
             'location' => h($hunt['location']),
             'description' => h(!empty($hunt['description']) ? $hunt['description'] : generateHuntDescription($hunt)),
             'instructions' => 'Start your quest adventure!',
+            'start_location_name' => h($hunt['start_location_name'] ?? ''),
+            'start_location_address' => h($hunt['start_location_address'] ?? ''),
+            'start_location_instructions' => h($hunt['start_location_instructions'] ?? ''),
             'total_clues' => 6, // TODO: Store in database
             'estimated_duration' => (int)($hunt['duration_minutes'] ?? 90) // Use actual duration from database
         ]

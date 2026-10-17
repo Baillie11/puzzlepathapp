@@ -703,9 +703,9 @@
         
         if (inputType === 'none') {
             return `
-                <div class="answer-section">
+                <div class="answer-section" id="answer-section-${index}">
                     <div class="answer-feedback" id="feedback-${index}"></div>
-                    <button class="submit-answer-btn" onclick="submitAnswer(${index})">
+                    <button class="submit-answer-btn" id="submit-${index}" onclick="submitAnswer(${index})">
                         ✅ Mark as Complete
                     </button>
                 </div>

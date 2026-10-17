@@ -2,6 +2,8 @@
 // Security: Define access constant before loading config
 define('PUZZLE_PATH_ACCESS', true);
 require_once 'config-secure.php';
+require_once __DIR__ . '/quest-progress.php';
+require_once __DIR__ . '/dashboard-access.php';
 
 // Security headers
 header('Content-Type: application/json');
@@ -18,16 +20,6 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
 try {
-    // Rate limiting check
-    if (!checkRateLimit('track_quest')) {
-        http_response_code(429);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Too many tracking requests. Please wait before trying again.'
-        ]);
-        exit;
-    }
-    
     // Validate request method
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         http_response_code(405);
@@ -51,6 +43,12 @@ try {
         throw new Exception('Invalid action');
     }
     
+    // Keep lifecycle actions in separate buckets: clue telemetry must not block a completion save.
+    if (!checkRateLimit('track_quest_' . $action)) {
+        http_response_code(429);
+        echo json_encode(['success' => false, 'message' => 'Too many tracking requests. Please wait before trying again.']);
+        exit;
+    }
     $timestamp = validateInput($input['timestamp'] ?? time() * 1000, 'int', ['min' => 0]);
     $userAgent = substr(validateInput($input['userAgent'] ?? '', 'string') ?: '', 0, 500);
     
@@ -59,7 +57,7 @@ try {
     
     switch ($action) {
         case 'start':
-            handleQuestStart($mainDb, $input);
+            $progress = puzzlepathRecordQuestProgress($mainDb, $input, false);
             break;
             
         case 'clue_completed':
@@ -67,14 +65,15 @@ try {
             break;
             
         case 'finish':
-            handleQuestFinish($mainDb, $input);
+            $progress = puzzlepathRecordQuestProgress($mainDb, $input, true);
+            $dashboard = ppDashboardAfterCompletion($mainDb, $input['bookingCode']);
             break;
             
         default:
             throw new Exception('Invalid action: ' . $action);
     }
     
-    echo json_encode(['success' => true]);
+    echo json_encode(array_merge(['success' => true, 'progress' => $progress ?? null], $dashboard ?? []));
     
 } catch (Exception $e) {
     // Log error securely (without exposing input data)

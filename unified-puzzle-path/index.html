@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -60,6 +60,31 @@
             margin-top: 0;
             color: #4ca6a8;
             text-align: center;
+        }
+
+        .start-location {
+            display: none;
+            margin-top: 1.25em;
+            padding: 1em;
+            background: #fff8df;
+            border: 2px solid #f2cf62;
+            border-radius: 10px;
+        }
+
+        .start-location h4 {
+            margin: 0 0 0.75em;
+            color: #333;
+            font-size: 1.15em;
+        }
+
+        .start-location p {
+            margin: 0.5em 0;
+            white-space: pre-line;
+        }
+
+        .start-location-name {
+            font-weight: bold;
+            color: #28797b;
         }
 
         .hunt-stats {
@@ -637,6 +662,14 @@
     <div class="hunt-info" id="huntInfo">
         <h3 id="huntName">Quest Details</h3>
         <p id="huntDescription">...</p>
+        <div class="start-location" id="startLocation" aria-live="polite">
+            <h4>📍 Your Starting Location</h4>
+            <p>Make your way to this location before starting the quest:</p>
+            <p class="start-location-name" id="startLocationName"></p>
+            <p id="startLocationAddress"></p>
+            <p id="startLocationInstructions"></p>
+            <p><strong>When you arrive, tap the button below to receive your first clue.</strong></p>
+        </div>
         <div class="hunt-stats">
             <div class="stat-item">
                 <div class="stat-number" id="totalClues">0</div>
@@ -720,6 +753,7 @@
             questStarted: startTime !== null,
             userAnswers: userAnswers,
             completedClueStatuses: completedClueStatuses,
+            currentClueIndex: Math.min(completedClues, Math.max(cluesData.length - 1, 0)),
             timestamp: Date.now()
         };
         
@@ -750,6 +784,10 @@
 
     function clearQuestState() {
         localStorage.removeItem('puzzlepath_quest_state');
+    }
+
+    function normalizeBookingCode(value) {
+        return String(value || '').trim().toUpperCase();
     }
     
     function restoreUserAnswers(userAnswers, completedStatuses) {
@@ -919,6 +957,17 @@
             
             // Restart auto-save
             startAutoSave();
+
+            // Return the player to their current clue after the restored UI is ready.
+            const currentClueIndex = Number.isInteger(questState.currentClueIndex)
+                ? questState.currentClueIndex
+                : Math.min(completedClues, Math.max(cluesData.length - 1, 0));
+            setTimeout(() => {
+                const currentClue = document.getElementById(`clue-${currentClueIndex}`);
+                if (currentClue) {
+                    currentClue.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 250);
             
             // Show finish button if all clues completed
             if (completedClues === totalClues) {
@@ -960,15 +1009,19 @@
         // Try to restore quest state on page load
         const savedState = loadQuestState();
         
-        // If there's a booking parameter in URL, prioritize it over saved state
-        if (bookingParam) {
-            console.log('PuzzlePath Debug: Found booking parameter in URL, clearing saved state');
-            clearQuestState(); // Clear any existing state
-            // Process the new booking parameter below
-        } else if (savedState) {
+        // Restore progress when reopening the same booking link. Only discard
+        // saved state when the player intentionally opens a different booking.
+        const savedBookingCode = normalizeBookingCode(savedState?.verifiedBookingData?.booking_code);
+        const requestedBookingCode = normalizeBookingCode(bookingParam);
+        const isSameBooking = savedState && bookingParam && savedBookingCode === requestedBookingCode;
+
+        if (savedState && (!bookingParam || isSameBooking)) {
             console.log('PuzzlePath Debug: Restoring saved quest state');
             restoreQuestState(savedState);
             return; // Skip URL parameter processing for restored state
+        } else if (savedState && bookingParam && !isSameBooking) {
+            console.log('PuzzlePath Debug: Different booking requested, clearing previous quest state');
+            clearQuestState();
         }
         
         // Process booking parameter if it exists
@@ -986,6 +1039,20 @@
             }, 2000);
         } else if (!bookingParam) {
             console.log('PuzzlePath Debug: No booking parameter found in URL');
+        }
+    });
+
+    // Mobile browsers may suspend the page immediately when another app opens.
+    // Persist synchronously at that point so recent answers and progress survive.
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden' && verifiedBookingData) {
+            saveQuestState();
+        }
+    });
+
+    window.addEventListener('pagehide', function() {
+        if (verifiedBookingData) {
+            saveQuestState();
         }
     });
 
@@ -1057,9 +1124,23 @@
         document.getElementById('questInstructions').textContent = `${greeting} ${huntData.instructions}`;
         document.getElementById('huntName').textContent = 'Quest Details'; // Keep generic header
         document.getElementById('huntDescription').textContent = huntData.description; // Now shows custom description
-        document.getElementById('totalClues').textContent = huntData.total_clues;
+        document.getElementById('totalClues').textContent = cluesData.length || huntData.total_clues;
         document.getElementById('estimatedTime').textContent = huntData.estimated_duration;
-        totalClues = huntData.total_clues;
+        totalClues = cluesData.length || huntData.total_clues;
+
+        const startLocation = document.getElementById('startLocation');
+        const locationName = huntData.start_location_name || '';
+        const locationAddress = huntData.start_location_address || '';
+        const locationInstructions = huntData.start_location_instructions || '';
+
+        if (locationName || locationAddress || locationInstructions) {
+            document.getElementById('startLocationName').textContent = locationName;
+            document.getElementById('startLocationAddress').textContent = locationAddress;
+            document.getElementById('startLocationInstructions').textContent = locationInstructions;
+            startLocation.style.display = 'block';
+        } else {
+            startLocation.style.display = 'none';
+        }
     }
 
     async function loadClues(huntId) {
@@ -1069,6 +1150,8 @@
             
             if (data.success) {
                 cluesData = data.clues;
+                totalClues = cluesData.length;
+                document.getElementById('totalClues').textContent = totalClues;
                 createClueElements();
             } else {
                 throw new Error(data.message);
@@ -1092,6 +1175,12 @@
         if (!container) {
             container = document.getElementById('clueContainer');
         }
+        const taskMarkup = clue.task ? `
+            <div class="task auto-shown">
+                <span class="task-label">Task</span>
+                ${clue.task}
+            </div>
+        ` : '';
         
         const clueElement = document.createElement('div');
         clueElement.className = 'clue';
@@ -1099,10 +1188,7 @@
         clueElement.innerHTML = `
             <h3>${clue.title}</h3>
             <p>${clue.clue.replace(/\n/g, '<br>')}</p>
-            <div class="task auto-shown">
-                <span class="task-label">Task</span>
-                ${clue.task}
-            </div>
+            ${taskMarkup}
             ${generateAnswerSection(clue, index)}
             <div class="buttons">
                 <button onclick="showHint(${index})">Need a Hint?</button>
@@ -1199,9 +1285,9 @@
         
         if (inputType === 'none') {
             return `
-                <div class="answer-section">
+                    <div class="answer-section" id="answer-section-${index}">
                     <div class="answer-feedback" id="feedback-${index}"></div>
-                    <button class="submit-answer-btn" onclick="submitAnswer(${index})">
+                        <button class="submit-answer-btn" id="submit-${index}" onclick="submitAnswer(${index})">
                         ✅ Mark as Complete
                     </button>
                 </div>
@@ -1430,6 +1516,9 @@
     async function submitAnswer(index) {
         const clue = cluesData[index];
         const submitBtn = document.getElementById(`submit-${index}`);
+        if (!submitBtn) {
+            throw new Error('Submit button not found for this clue');
+        }
         
         // Disable submit button during processing
         submitBtn.disabled = true;
@@ -1644,11 +1733,20 @@
     }
     
     function showStartButton() {
+        // Verification and session restoration can both reach this function.
+        // Reuse the existing control so duplicate buttons are never appended.
+        const existingContainer = document.getElementById('startButtonContainer');
+        if (existingContainer) {
+            existingContainer.style.display = 'block';
+            return;
+        }
+
         const startButtonContainer = document.createElement('div');
         startButtonContainer.className = 'container';
+        startButtonContainer.id = 'startButtonContainer';
         startButtonContainer.style.textAlign = 'center';
         startButtonContainer.innerHTML = `
-            <button class="start-button" id="startButton" onclick="startQuest()">🚀 Start Your Quest!</button>
+            <button class="start-button" id="startButton" onclick="startQuest()">📍 I'm at the Starting Location — Show My First Clue</button>
         `;
         
         // Insert after the hunt info container
@@ -1695,11 +1793,14 @@
         
         startTime = new Date();
         
-        // Hide start button
-        const startButton = document.getElementById('startButton');
-        if (startButton) {
-            startButton.style.display = 'none';
-        }
+        // Remove the start control completely once activated. This also cleans
+        // up duplicate containers left in a browser by an older cached build.
+        document.querySelectorAll('#startButtonContainer, #startButton').forEach(element => {
+            const container = element.id === 'startButtonContainer'
+                ? element
+                : element.closest('.container');
+            if (container) container.remove();
+        });
         
         // Show timer controls and timer section
         document.getElementById('timerContainer').style.display = 'block';
@@ -1722,6 +1823,7 @@
             const firstClue = document.getElementById('clue-0');
             if (firstClue) {
                 firstClue.style.display = 'block';
+                firstClue.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 console.log('DEBUG - Successfully showed first clue');
             } else {
                 console.error('DEBUG - First clue element not found even after validation!');
@@ -1860,54 +1962,56 @@
         progressFill.textContent = percentage + '%';
     }
 
-    function finishQuest() {
-        const endTime = new Date();
-        const totalTime = endTime - startTime;
-        
-        // Stop timer
-        clearInterval(timerInterval);
-        
-        // Stop auto-save
-        stopAutoSave();
-        
-        // Send completion data to server
-        sendQuestEvent('finish', {
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
-            totalTime: totalTime,
-            huntId: huntData.hunt_id,
-            bookingCode: verifiedBookingData.booking_code
-        });
-        
-        // Redirect to registration page with completion data
-        const completionData = {
-            totalTime: totalTime,
-            formattedTime: formatTime(totalTime),
-            completionDate: endTime.toISOString(),
-            bookingCode: verifiedBookingData.booking_code,
-            huntName: huntData.hunt_name,
-            huntId: huntData.hunt_id
-        };
-        
-        // Store completion data in sessionStorage for the registration page
-        sessionStorage.setItem('questCompletion', JSON.stringify(completionData));
-        
-        // Mark booking as used so it cannot be reused
-        try {
-            fetch('mark_booking_used.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ booking_code: verifiedBookingData.booking_code })
-            }).catch(e => console.warn('Failed to mark booking as used:', e));
-        } catch (e) {
-            console.warn('Failed to mark booking as used:', e);
+    let finishSaveInFlight = false;
+    async function finishQuest() {
+        if (finishSaveInFlight || completedClues !== totalClues || !totalClues) return;
+        finishSaveInFlight = true;
+        const button = document.getElementById('finishButton');
+        button.disabled = true;
+        button.textContent = 'Saving your completion…';
+        let errorBox = document.getElementById('finishSaveError');
+        if (!errorBox) {
+            errorBox = document.createElement('p');
+            errorBox.id = 'finishSaveError';
+            errorBox.setAttribute('role', 'alert');
+            errorBox.style.color = '#b32d2e';
+            document.getElementById('finishContainer').appendChild(errorBox);
         }
-        
-        // Clear quest state since quest is completed
-        clearQuestState();
-        
-        // Redirect to registration page
-        window.location.href = 'register.html';
+        errorBox.textContent = '';
+        try { saveQuestState(); } catch (storageError) { console.warn('Could not cache current progress', storageError); }
+        const pendingKey = 'puzzlepath-finish:' + verifiedBookingData.booking_code;
+        try {
+            const endTime = new Date();
+            let attempt = {
+                startTime: startTime.toISOString(), endTime: endTime.toISOString(),
+                totalTime: endTime - startTime, huntId: huntData.hunt_id,
+                bookingCode: verifiedBookingData.booking_code
+            };
+            // Freeze finish time across retries, including a refresh while offline.
+            try {
+                const saved = JSON.parse(localStorage.getItem(pendingKey) || 'null');
+                if (saved && saved.startTime === attempt.startTime && saved.huntId === attempt.huntId && saved.bookingCode === attempt.bookingCode) attempt = saved;
+                localStorage.setItem(pendingKey, JSON.stringify(attempt));
+            } catch (storageError) { console.warn('Could not cache pending completion', storageError); }
+            const result = await sendQuestEvent('finish', attempt, true);
+            if (!result.progress || result.progress.quest_status !== 'completed') throw new Error('Completion has not been confirmed. Please try again.');
+            const completionData = {
+                totalTime: attempt.totalTime, formattedTime: formatTime(attempt.totalTime),
+                completionDate: attempt.endTime, bookingCode: attempt.bookingCode,
+                huntName: huntData.hunt_name, huntId: attempt.huntId
+            };
+            sessionStorage.setItem('questCompletion', JSON.stringify(completionData));
+            clearInterval(timerInterval);
+            stopAutoSave();
+            // The server saved completion and marked the booking used in one transaction.
+            clearQuestState();
+            try { localStorage.removeItem(pendingKey); } catch (storageError) {}
+            window.location.href = 'dashboard.php';
+        } catch (error) {
+            errorBox.textContent = 'We could not confirm that your completion was saved. Your progress is still here. ' + (error.message || 'Check your connection and try again.');
+            button.disabled = false;
+            button.textContent = 'Retry saving completion';
+        } finally { finishSaveInFlight = false; }
     }
 
     function formatTime(milliseconds) {
@@ -2026,31 +2130,25 @@
     }
 
     // Function to send quest events to server
-    async function sendQuestEvent(action, data) {
-        const eventData = {
-            action: action,
-            ...data,
-            userAgent: navigator.userAgent,
-            timestamp: Date.now()
-        };
-        
+    async function sendQuestEvent(action, data, required = false) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
         try {
             const response = await fetch('track_quest.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(eventData)
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin', keepalive: true, signal: controller.signal,
+                body: JSON.stringify({action, ...data, userAgent: navigator.userAgent, timestamp: Date.now()})
             });
-            
-            // Don't block user experience if tracking fails
-            if (!response.ok) {
-                console.warn('Quest tracking failed:', response.statusText);
-            }
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Could not save quest progress.');
+            return result;
         } catch (error) {
+            if (required) throw error;
             console.warn('Quest tracking error:', error);
-        }
+            return {success: false};
+        } finally { clearTimeout(timeout); }
     }
+
 </script>
 <!-- Geofencing Services -->
 <script src="assets/js/geo/geolocation.js"></script>
