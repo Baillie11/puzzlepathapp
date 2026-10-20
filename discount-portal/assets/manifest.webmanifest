@@ -1,0 +1,25 @@
+{
+  "id": "/?puzzlepath-discounts=1",
+  "name": "Puzzle Path Discounts",
+  "short_name": "Path Discounts",
+  "description": "Create and share Puzzle Path discount codes.",
+  "start_url": "/?puzzlepath-discounts=1",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f5ee",
+  "theme_color": "#123e36",
+  "icons": [
+    {
+      "src": "discount-icon-192.png?v=1.1.2",
+      "type": "image/png",
+      "purpose": "any",
+      "sizes": "192x192"
+    },
+    {
+      "src": "discount-icon-512.png?v=1.1.2",
+      "type": "image/png",
+      "purpose": "any",
+      "sizes": "512x512"
+    }
+  ]
+}
