@@ -1,0 +1,61 @@
+<?php defined('ABSPATH') || exit; ?>
+<div class="pps" id="sponsorship">
+  <section class="pps-hero" aria-labelledby="pps-heading">
+    <div><span class="pps-eyebrow">Small clues. A little kindness. A big difference.</span>
+      <h1 id="pps-heading">Supporting Our Community, <em>One Adventure at a Time</em></h1>
+      <p>At Puzzle Path, we believe great adventures should create great memories — and make a difference along the way.</p>
+      <p>We're proud to support schools, charities, community groups and fundraising events with complimentary Puzzle Path Scavenger Hunt vouchers.</p>
+      <p>Organising a school fete, charity raffle, community fundraiser or volunteer appreciation event? We'd love to hear from you.</p>
+      <a class="pps-button" href="#sponsorship-form">Request Sponsorship <span aria-hidden="true">↗</span></a>
+      <span class="pps-caption">A little adventure can go a long way.</span>
+    </div>
+    <div class="pps-koko"><img src="<?php echo esc_url($asset_url . 'koko-transparent.webp'); ?>" width="640" height="960" alt="Koko, our koala explorer, holding a magnifying glass and treasure map" fetchpriority="high"><span class="pps-koko-note">Great adventures.<br><strong>Even greater memories.</strong></span></div>
+  </section>
+
+  <section class="pps-intro pps-panel" aria-labelledby="pps-what">
+    <div><span class="pps-eyebrow">A little curiosity goes a long way</span><h2 id="pps-what">What is Puzzle Path?</h2><p>Fun, self-guided scavenger hunt adventures that bring friends, families and teams outdoors to explore their surroundings, solve clues and create lasting memories.</p><p>Our adventures combine discovery, puzzles and exploration into an activity you can enjoy together. The adventure is waiting — all you need to do is follow the clues!</p><strong>Discover Queensland one clue at a time.</strong></div>
+    <div class="pps-features"><div><span aria-hidden="true">↗</span><h3>Explore together</h3><p>Fresh air. New discoveries.</p></div><div><span aria-hidden="true">♡</span><h3>Make memories</h3><p>Good company. Great moments.</p></div><div><span aria-hidden="true">?</span><h3>Solve the clues</h3><p>Curiosity meets teamwork.</p></div></div>
+  </section>
+
+  <section class="pps-section" aria-labelledby="pps-support"><div class="pps-section-head"><span class="pps-eyebrow">Our way of giving back</span><h2 id="pps-support">How Puzzle Path Supports Your Organisation</h2><p>Complimentary digital scavenger hunt vouchers to help you celebrate, fundraise and say thank you.</p></div>
+    <div class="pps-cards"><article class="pps-card"><span class="pps-number">01</span><h3>One voucher. One team.</h3><p>Each voucher provides access to one eligible Puzzle Path Scavenger Hunt for a group of <strong>up to five people</strong>.</p><p>Current regular retail value: <strong>$19.95 per group voucher</strong>.</p></article><article class="pps-card"><span class="pps-number">02</span><h3>A thoughtful reward</h3><p>Perfect for raffle prizes, fundraising prizes, event giveaways, volunteer appreciation gifts and community rewards.</p></article><article class="pps-card"><span class="pps-number">03</span><h3>Made for your community</h3><p>Every voucher has a unique redemption code. Where appropriate, Golden Tickets can also feature your organisation's branding.</p></article></div>
+    <p class="pps-note">Requests are considered individually, subject to approval and availability. This program provides experience vouchers; cash sponsorship is not offered.</p>
+  </section>
+
+  <section class="pps-golden pps-panel" aria-labelledby="pps-golden"><div><span class="pps-eyebrow">A little golden possibility</span><h2 id="pps-golden">Our Digital Golden Tickets</h2><p><strong>Something a little more exciting than an ordinary gift voucher!</strong></p><p>Approved organisations receive specially designed Puzzle Path Digital Golden Tickets to share electronically or print for raffles, fundraising events and community giveaways.</p><p>Each Golden Ticket features its own unique redemption code, giving recipients access to an eligible scavenger hunt for up to five people.</p><p>Where appropriate, we can include your organisation's branding to make your Golden Tickets extra special.</p></div><div class="pps-ticket-wrap"><div class="pps-ticket" role="img" aria-label="Illustrative Golden Ticket concept, not redeemable. A digital, printable scavenger hunt voucher for up to five people."><span class="pps-ticket-brand">PUZZLE PATH</span><span class="pps-ticket-star" aria-hidden="true">✧</span><strong>Golden<br>Ticket</strong><p>A world of clues.<br>A shared adventure.</p><div class="pps-ticket-rule">ONE ELIGIBLE HUNT · UP TO FIVE PEOPLE</div><small>VISUAL CONCEPT ONLY · NOT REDEEMABLE</small></div><p class="pps-ticket-caption">Digital to share · Ready to print · Uniquely coded</p></div></section>
+
+  <section class="pps-community pps-section" aria-labelledby="pps-community"><span class="pps-eyebrow">Good things happen together</span><h2 id="pps-community">Proud to Support Our Community</h2>
+    <?php if ($organisations): ?><div class="pps-cards"><?php foreach ($organisations as $org): ?><article class="pps-card"><?php if (!empty($org['logo_path'])): ?><img class="pps-org-logo" src="<?php echo esc_url($org['logo_path']); ?>" alt="<?php echo esc_attr($org['name'] . ' logo'); ?>" loading="lazy"><?php endif; ?><h3><?php echo esc_html($org['name']); ?></h3><?php if (!empty($org['description'])): ?><p><?php echo esc_html($org['description']); ?></p><?php endif; ?><?php if (!empty($org['website_url'])): ?><a href="<?php echo esc_url($org['website_url']); ?>">Visit <?php echo esc_html($org['name']); ?></a><?php endif; ?></article><?php endforeach; ?></div>
+    <?php else: ?><p class="pps-community-copy">From school communities to local clubs and charities, we love helping people bring a little more adventure to a good cause. We'll share community stories here as they become ready to celebrate.</p><?php endif; ?>
+  </section>
+
+  <section class="pps-application pps-panel" id="sponsorship-form" aria-labelledby="pps-form-heading" tabindex="-1"><div class="pps-form-intro"><span class="pps-eyebrow">Your community. Our next adventure.</span><h2 id="pps-form-heading">Let's Make a Difference Together</h2><p>Would you like Puzzle Path to support your organisation or upcoming community event?</p><p>Complete the short form and we'll be in touch.</p><div class="pps-contact-note"><strong>A friendly hello is all it takes.</strong><p>Andrew Baillie<br>Puzzle Path</p></div></div>
+    <div class="pps-form-card"><form id="pps-form" data-endpoint="<?php echo esc_url($endpoint); ?>" novalidate>
+      <p class="pps-required">All fields are required unless marked optional.</p>
+      <?php foreach (['organisation_name' => ['Organisation Name', 'text', 'organization', 160], 'website' => ['Organisation Website (optional)', 'url', 'url', 500], 'contact_name' => ['Contact Person Name', 'text', 'name', 120], 'email' => ['Contact Person Email Address', 'email', 'email', 254]] as $name => $field): ?>
+      <div class="pps-field"><label for="pps-<?php echo esc_attr($name); ?>"><?php echo esc_html($field[0]); ?></label><input id="pps-<?php echo esc_attr($name); ?>" name="<?php echo esc_attr($name); ?>" type="<?php echo esc_attr($field[1]); ?>" autocomplete="<?php echo esc_attr($field[2]); ?>" maxlength="<?php echo (int)$field[3]; ?>" <?php echo $name !== 'website' ? 'required' : 'placeholder="example.org.au"'; ?> aria-describedby="pps-error-<?php echo esc_attr($name); ?>"><span class="pps-field-error" id="pps-error-<?php echo esc_attr($name); ?>"></span></div>
+      <?php endforeach; ?>
+      <fieldset class="pps-contact-method"><legend>Preferred Contact Method</legend><div><label><input type="radio" name="contact_method" value="email" checked required> Email</label><label><input type="radio" name="contact_method" value="phone" required> Phone call</label></div><span id="pps-error-contact_method" class="pps-field-error"></span></fieldset>
+      <div class="pps-field" id="pps-phone-field" hidden><label for="pps-phone">Phone Number</label><input type="tel" id="pps-phone" name="phone" autocomplete="tel" maxlength="40" aria-describedby="pps-phone-hint pps-error-phone" disabled><small id="pps-phone-hint">Australian mobile or landline, including +61.</small><span id="pps-error-phone" class="pps-field-error"></span></div>
+      <div class="pps-honey" aria-hidden="true"><label for="pps-fax">Leave this field empty</label><input id="pps-fax" name="company_fax" type="text" tabindex="-1" autocomplete="off"></div>
+      <p class="pps-privacy">We'll use your details to respond to your sponsorship enquiry. You won't be subscribed to promotional emails. <?php if ($privacy_url): ?><a href="<?php echo esc_url($privacy_url); ?>">Privacy Policy</a>.<?php endif; ?></p>
+      <p id="pps-status" role="status" aria-live="polite" tabindex="-1"><?php echo $privacy_url ? 'Preparing the secure form…' : 'Sponsorship enquiries are temporarily unavailable. Please use our Contact page.'; ?></p>
+      <button type="submit" class="pps-button" disabled>Request Sponsorship <span aria-hidden="true">↗</span></button><noscript><p>Please enable JavaScript to use this secure form, or <a href="<?php echo esc_url(home_url('/contact/')); ?>">contact Andrew through our Contact page</a>.</p></noscript>
+    </form><div id="pps-success" hidden tabindex="-1"><span class="pps-eyebrow">A little kindness starts here</span><h3>Thank you for reaching out!</h3><p>Your sponsorship enquiry has been received.</p><p>We're delighted that you're interested in working with Puzzle Path to create memorable experiences for your community.</p><p>We'll be in touch using your preferred contact method.</p><p class="pps-reference">Your reference: <strong id="pps-reference"></strong></p></div></div>
+  </section>
+
+  <section class="pps-faq pps-section" aria-labelledby="pps-faq"><div class="pps-section-head"><span class="pps-eyebrow">A few helpful clues</span><h2 id="pps-faq">Frequently Asked Questions</h2></div>
+    <?php foreach ([
+      'Who can apply for sponsorship?' => 'Schools, charities, sporting clubs, not-for-profit organisations and community groups are welcome to submit an enquiry.',
+      'What does Puzzle Path provide?' => 'We provide complimentary Puzzle Path Scavenger Hunt vouchers for fundraising, prizes, giveaways or volunteer appreciation.',
+      'Do you provide cash sponsorship?' => 'No. Our sponsorship program currently provides complimentary experience vouchers rather than cash contributions.',
+      'How many people can use one voucher?' => 'Each voucher provides access to an eligible Puzzle Path Scavenger Hunt for a group of up to five people.',
+      'Can the vouchers be printed?' => 'Yes. Our Digital Golden Tickets are designed to be shared electronically or printed.',
+      "Can our organisation's logo appear on the Golden Tickets?" => "Where appropriate, we can arrange co-branded Golden Tickets featuring your organisation's branding.",
+      'Is sponsorship guaranteed?' => 'All applications are considered individually. Submission of an enquiry does not guarantee sponsorship approval.',
+      'Is there a cost to apply?' => 'No. There is no fee to submit a sponsorship enquiry.',
+      'Where are Puzzle Path scavenger hunts available?' => 'Puzzle Path is currently focused on Queensland adventures. Sponsorship requests will be assessed against suitable available experiences.'
+    ] as $question => $answer): ?><details><summary><?php echo esc_html($question); ?></summary><p><?php echo esc_html($answer); ?><?php if (str_starts_with($question, 'Where are')): ?> <a href="<?php echo esc_url(home_url('/puzzle-path-upcoming-adventures/')); ?>">Explore our available adventures</a>.<?php endif; ?></p></details><?php endforeach; ?>
+  </section>
+  <section class="pps-final" aria-labelledby="pps-final"><span class="pps-eyebrow">Let's follow a few clues together</span><h2 id="pps-final">Every Great Adventure Starts Somewhere</h2><p>We love helping local communities turn ordinary moments into extraordinary memories.</p><p>If you're organising something special, we'd love to hear about it.</p><a class="pps-button" href="#sponsorship-form">Request Sponsorship <span aria-hidden="true">↗</span></a></section>
+</div>
