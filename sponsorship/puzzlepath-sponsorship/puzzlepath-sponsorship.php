@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Puzzle Path Community Sponsorship
  * Description: Community sponsorship page and private, durable enquiry recording.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires PHP: 8.0
  */
 defined('ABSPATH') || exit;
@@ -57,8 +57,8 @@ function pps_is_page(): bool { return is_page((int)get_option('pps_page_id')) &&
 add_filter('body_class', function ($classes) { if (pps_is_page()) $classes[] = 'pps-page'; return $classes; });
 add_action('wp_enqueue_scripts', function () {
     if (!pps_is_page()) return;
-    wp_enqueue_style('pps', plugins_url('assets/sponsorship.css', __FILE__), [], '1.0.1');
-    wp_enqueue_script('pps', plugins_url('assets/sponsorship.js', __FILE__), [], '1.0.1', true);
+    wp_enqueue_style('pps', plugins_url('assets/sponsorship.css', __FILE__), [], '1.0.2');
+    wp_enqueue_script('pps', plugins_url('assets/sponsorship.js', __FILE__), [], '1.0.2', true);
 });
 add_shortcode('puzzlepath_sponsorship', function () {
     $asset_url = plugins_url('assets/', __FILE__);
@@ -93,15 +93,23 @@ add_filter('wp_nav_menu_objects', function ($items, $args) {
 add_filter('astra_footer_copyright', function ($html) {
     $id = (int)get_option('pps_page_id');
     if ($id && get_post_status($id) === 'publish' && !str_contains($html, '/sponsorship')) $html .= '<p><a href="' . esc_url(get_permalink($id)) . '">Sponsorship</a></p>';
-    return $html;
+    return pps_footer_privacy_link($html);
 });
+// Use the published WordPress policy; never add it to the main navigation.
+function pps_footer_privacy_link(string $html): string {
+    $url = get_privacy_policy_url();
+    if ($url && !str_contains($html, esc_url($url))) {
+        $html .= '<p class="has-text-align-center"><a href="' . esc_url($url) . '">Privacy Policy</a></p>';
+    }
+    return $html;
+}
 // The installed Astra footer stores its copyright as a paragraph block widget.
 add_filter('widget_block_content', function ($content) {
     $id = (int)get_option('pps_page_id');
     if ($id && get_post_status($id) === 'publish' && str_contains(wp_strip_all_tags($content), 'Puzzle Path. All rights reserved.') && !str_contains($content, '/sponsorship')) {
         $content .= '<p class="has-text-align-center"><a href="' . esc_url(get_permalink($id)) . '">Sponsorship</a></p>';
     }
-    return $content;
+    return str_contains(wp_strip_all_tags($content), 'Puzzle Path. All rights reserved.') ? pps_footer_privacy_link($content) : $content;
 });
 add_action('admin_notices', function () {
     if (!current_user_can('manage_options')) return;

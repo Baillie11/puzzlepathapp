@@ -57,3 +57,7 @@ See `../VERIFICATION.md` in the source workspace for results and commands. The r
 Version 1.0.1 was installed and activated on puzzlepath.com.au on 26 October 2026. The published `/sponsorship/` page (1994), desktop/mobile navigation, footer link, scoped styling and page metadata were verified live. `metadata.php` normalises this page's head because the live theme and Click SEO otherwise emit conflicting metadata.
 
 Privacy Policy page 1996 is saved as an unpublished draft for Andrew's review. The form correctly remains unavailable until an approved policy is published and selected in Settings → Privacy. The review copy is `../privacy-policy-draft.html`. Live MySQL persistence and sitemap inclusion remain unverified; run a labelled live enquiry after policy approval. No live enquiry was submitted. Local previews never accept real enquiries.
+
+### Privacy publication update
+
+Version 1.0.2 is deployed. Privacy Policy page 1996 is now published and selected in WordPress, with footer and sponsorship-form links. The form bootstraps successfully. The owner directed that unresolved review notes be moved to the root TODO.md; these remain follow-up work. The current policy source is ../privacy-policy.html, and the earlier draft is retained for history.

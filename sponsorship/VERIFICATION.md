@@ -29,3 +29,7 @@ Browser screenshots are in `review/`. Desktop, tablet and mobile widths were ins
 - A ClickBackup job was started but completion has not been confirmed. Do not treat it as a verified restore point.
 
 Existing unrelated working-tree changes were preserved. Deployment source was isolated in a managed worktree based on current origin/main.
+
+## Privacy publication — 26 October 2026
+
+At the owner's explicit direction, all nine review notes were moved to the repository TODO.md and removed from the public policy. Policy page 1996 is published at /privacy-policy/ and selected in WordPress. Version 1.0.2 adds its link to the site footer without adding a main-menu item. Verified the live policy text, footer link, sponsorship form policy link and enabled submit button. No test enquiry was submitted during this update; live record persistence still needs verification. The published HTML source is privacy-policy.html; privacy-policy-draft.html is the historical draft.
